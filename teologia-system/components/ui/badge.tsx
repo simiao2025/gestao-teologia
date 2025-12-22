@@ -2,7 +2,7 @@ import React from 'react'
 import { cn, getStatusColor, getStatusLabel, getNivelColor, getNivelLabel } from '@/lib/utils'
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'status' | 'nivel' | 'success' | 'warning' | 'error'
+  variant?: 'default' | 'status' | 'nivel' | 'success' | 'warning' | 'error' | 'outline'
 }
 
 function Badge({ className, variant = 'default', ...props }: BadgeProps) {
@@ -12,7 +12,8 @@ function Badge({ className, variant = 'default', ...props }: BadgeProps) {
     nivel: '', // Usará getNivelColor dinamicamente
     success: 'bg-green-100 text-green-800',
     warning: 'bg-yellow-100 text-yellow-800',
-    error: 'bg-red-100 text-red-800'
+    error: 'bg-red-100 text-red-800',
+    outline: 'border border-gray-200 text-gray-800'
   }
 
   const baseClasses = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium'
@@ -29,7 +30,7 @@ function Badge({ className, variant = 'default', ...props }: BadgeProps) {
   )
 }
 
-export { Badge }
+
 
 // Componente específico para status
 interface StatusBadgeProps extends React.HTMLAttributes<HTMLDivElement> {

@@ -37,22 +37,23 @@ export function getStatusColor(status: string): string {
     'pago': 'bg-green-100 text-green-800',
     'enviado': 'bg-blue-100 text-blue-800',
     'entregue': 'bg-purple-100 text-purple-800',
-    
+    'cancelado': 'bg-red-100 text-red-800',
+
     // Status de alunos
     'ativo': 'bg-green-100 text-green-800',
     'trancado': 'bg-red-100 text-red-800',
     'concluído': 'bg-blue-100 text-blue-800',
-    
+
     // Status acadêmico
     'cursando': 'bg-blue-100 text-blue-800',
     'aprovado': 'bg-green-100 text-green-800',
     'reprovado': 'bg-red-100 text-red-800',
-    
+
     // Status de pagamento Pix
     'gerado': 'bg-yellow-100 text-yellow-800',
     'expirado': 'bg-red-100 text-red-800'
   }
-  
+
   return statusColors[status] || 'bg-gray-100 text-gray-800'
 }
 
@@ -63,22 +64,23 @@ export function getStatusLabel(status: string): string {
     'pago': 'Pago',
     'enviado': 'Enviado',
     'entregue': 'Entregue',
-    
+    'cancelado': 'Cancelado',
+
     // Status de alunos
     'ativo': 'Ativo',
     'trancado': 'Trancado',
     'concluído': 'Concluído',
-    
+
     // Status acadêmico
     'cursando': 'Cursando',
     'aprovado': 'Aprovado',
     'reprovado': 'Reprovado',
-    
+
     // Status de pagamento Pix
     'gerado': 'Gerado',
     'expirado': 'Expirado'
   }
-  
+
   return statusLabels[status] || status
 }
 
@@ -88,7 +90,7 @@ export function getNivelColor(nivel: string): string {
     'medio': 'bg-yellow-100 text-yellow-800',
     'avancado': 'bg-red-100 text-red-800'
   }
-  
+
   return nivelColors[nivel] || 'bg-gray-100 text-gray-800'
 }
 
@@ -98,7 +100,7 @@ export function getNivelLabel(nivel: string): string {
     'medio': 'Médio',
     'avancado': 'Avançado'
   }
-  
+
   return nivelLabels[nivel] || nivel
 }
 

@@ -18,6 +18,7 @@ interface MatriculaFormProps {
 export default function MatriculaForm({ onSuccess }: MatriculaFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [subnucleos, setSubnucleos] = useState<Subnucleo[]>([])
+  const [niveis, setNiveis] = useState<any[]>([])
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -25,12 +26,13 @@ export default function MatriculaForm({ onSuccess }: MatriculaFormProps) {
     register,
     handleSubmit,
     formState: { errors },
-    watch
+    watch,
+    reset
   } = useForm<MatriculaFormData>({
     resolver: zodResolver(matriculaSchema)
   })
 
-  // Carregar subnúcleos
+  // Carregar subnúcleos e níveis
   useEffect(() => {
     const fetchSubnucleos = async () => {
       const { data, error } = await supabase
@@ -45,7 +47,21 @@ export default function MatriculaForm({ onSuccess }: MatriculaFormProps) {
       }
     }
 
+    const fetchNiveis = async () => {
+      const { data, error } = await supabase
+        .from('niveis')
+        .select('*')
+        .order('ordem')
+
+      if (error) {
+        console.error('Erro ao carregar níveis:', error)
+      } else {
+        setNiveis(data || [])
+      }
+    }
+
     fetchSubnucleos()
+    fetchNiveis()
   }, [])
 
   const onSubmit = async (data: MatriculaFormData) => {
@@ -61,30 +77,6 @@ export default function MatriculaForm({ onSuccess }: MatriculaFormProps) {
         return
       }
 
-      // Verificar se o email já existe
-      const { data: existingUser } = await supabase
-        .from('usuarios')
-        .select('email')
-        .eq('email', data.email)
-        .single()
-
-      if (existingUser) {
-        setError('Este email já está cadastrado')
-        return
-      }
-
-      // Verificar se o CPF já existe
-      const { data: existingAluno } = await supabase
-        .from('alunos')
-        .select('cpf')
-        .eq('cpf', cpf)
-        .single()
-
-      if (existingAluno) {
-        setError('Este CPF já está cadastrado')
-        return
-      }
-
       // Criar usuário e aluno usando a função SQL
       const { data: result, error: createError } = await supabase
         .rpc('criar_aluno', {
@@ -94,18 +86,45 @@ export default function MatriculaForm({ onSuccess }: MatriculaFormProps) {
           p_cpf: cpf,
           p_data_nascimento: data.data_nascimento,
           p_endereco: data.endereco,
-          p_subnucleo_id: data.subnucleo_id
+          p_subnucleo_id: data.subnucleo_id,
+          p_nivel_id: data.nivel_id
         })
 
       if (createError) {
         console.error('Erro ao criar aluno:', createError)
-        setError('Erro ao processar matrícula. Tente novamente.')
+        if (createError.message?.includes('duplicate key') || createError.message?.includes('already exists')) {
+          if (createError.message?.includes('email')) {
+            setError('Este email já está cadastrado')
+          } else if (createError.message?.includes('cpf')) {
+            setError('Este CPF já está cadastrado')
+          } else {
+            setError('Dados já cadastrados no sistema')
+          }
+        } else {
+          setError('Erro ao processar matrícula. Tente novamente.')
+        }
         return
       }
 
-      setSuccess('Matrícula realizada com sucesso! Verifique seu email para acessar o sistema.')
-      
+      // Enviar magic link por email
+      const { error: signInError } = await supabase.auth.signInWithOtp({
+        email: data.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      })
+
+      if (signInError) {
+        console.error('Erro ao enviar magic link:', signInError)
+        setError('Erro ao enviar link de acesso. Tente novamente.')
+        return
+      }
+
+      setSuccess('Matrícula realizada com sucesso! Enviamos um link de acesso para seu email.')
+
       // Limpar formulário
+      reset()
+
       setTimeout(() => {
         onSuccess?.()
       }, 3000)
@@ -260,9 +279,8 @@ export default function MatriculaForm({ onSuccess }: MatriculaFormProps) {
                 <select
                   id="subnucleo_id"
                   {...register('subnucleo_id')}
-                  className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
-                    errors.subnucleo_id ? 'border-red-300' : ''
-                  }`}
+                  className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${errors.subnucleo_id ? 'border-red-300' : ''
+                    }`}
                 >
                   <option value="">Selecione um subnúcleo</option>
                   {subnucleos.map((subnucleo) => (
@@ -276,13 +294,45 @@ export default function MatriculaForm({ onSuccess }: MatriculaFormProps) {
                 )}
               </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Processando...' : 'Confirmar Matrícula'}
-              </Button>
+              <div className="space-y-2">
+                <label htmlFor="nivel_id" className="text-sm font-medium text-gray-700">
+                  Nível Atual *
+                </label>
+                <select
+                  id="nivel_id"
+                  {...register('nivel_id')}
+                  className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${errors.nivel_id ? 'border-red-300' : ''
+                    }`}
+                >
+                  <option value="">Selecione um nível</option>
+                  {niveis.map((nivel) => (
+                    <option key={nivel.id} value={nivel.id}>
+                      {nivel.nome}
+                    </option>
+                  ))}
+                </select>
+                {errors.nivel_id && (
+                  <p className="text-red-600 text-sm">{errors.nivel_id.message}</p>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 mt-8">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => window.location.href = '/'}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-[2] bg-blue-600 hover:bg-blue-700"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Processando...' : 'Enviar Matrícula'}
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

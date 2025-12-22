@@ -1,0 +1,19 @@
+
+> sistema-teologia@1.0.0 build
+> next build --webpack
+
+   ▲ Next.js 16.0.10 (webpack)
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · cpus: 1
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 15.1s
+   Running TypeScript ...
+Failed to compile.
+
+Type error: Cannot find type definition file for 'babel__core'.
+  The file is in the program because:
+    Entry point for implicit type library 'babel__core'
+
+Next.js build worker exited with code: 1 and signal: null

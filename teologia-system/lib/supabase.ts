@@ -1,15 +1,24 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Singleton pattern to avoid multiple GoTrueClient instances
+const globalForSupabase = globalThis as unknown as {
+  supabase: SupabaseClient | undefined
+}
+
+export const supabase = globalForSupabase.supabase ?? createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: false
   }
 })
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForSupabase.supabase = supabase
+}
 
 // Tipos TypeScript para as tabelas
 export interface Usuario {
@@ -41,10 +50,16 @@ export interface Subnucleo {
 
 export interface Disciplina {
   id: string
-  nivel: 'basico' | 'medio' | 'avancado'
+  nivel_id: string
   codigo: string
   nome: string
   descricao?: string
+  valor: number
+  status_acad: 'pendente' | 'proximo_pedido' | 'ja_pedido' | 'finalizado'
+  data_limite_pedido?: string
+  data_encerramento?: string
+  lembrete_48h_enviado: boolean
+  lembrete_24h_enviado: boolean
   criado_em: string
 }
 
@@ -62,7 +77,7 @@ export interface Pedido {
   aluno_id: string
   livro_id: string
   valor: number
-  status: 'pendente' | 'pago' | 'enviado' | 'entregue'
+  status: 'pendente' | 'pago' | 'enviado' | 'entregue' | 'cancelado'
   txid?: string
   criado_em: string
 }
@@ -84,7 +99,36 @@ export interface AlunoDisciplina {
   disciplina_id: string
   status: 'cursando' | 'aprovado' | 'reprovado' | 'pendente'
   nota?: number
+  nota1?: number
+  nota2?: number
+  nota3?: number
+  nota4?: number
+  nota5?: number
+  nota_recuperacao?: number
+  media_final?: number
   data_inicio?: string
   data_conclusao?: string
   criado_em: string
+}
+
+export interface EscalaMonitor {
+  id: string
+  monitor_id: string
+  subnucleo_id: string
+  disciplina_id: string
+  criado_em: string
+}
+
+export interface ConfigSistema {
+  id: string
+  nome_instituicao: string
+  logo_url?: string
+  whatsapp_secretaria?: string
+  evolution_url?: string
+  evolution_apikey?: string
+  evolution_instance?: string
+  mp_access_token?: string
+  mp_public_key?: string
+  tema?: string
+  atualizado_em: string
 }

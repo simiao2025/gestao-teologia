@@ -10,7 +10,8 @@ export const matriculaSchema = z.object({
   cpf: z.string().min(11, 'CPF inválido'),
   data_nascimento: z.string().min(1, 'Data de nascimento obrigatória'),
   endereco: z.string().min(5, 'Endereço inválido'),
-  subnucleo_id: z.string().uuid('Subnúcleo inválido')
+  subnucleo_id: z.string().uuid('Subnúcleo inválido'),
+  nivel_id: z.string().uuid('Nível inválido')
 })
 
 export type MatriculaFormData = z.infer<typeof matriculaSchema>
@@ -104,28 +105,28 @@ export type StatusPedidoFormData = z.infer<typeof statusPedidoSchema>
 // Validar CPF
 export function validateCpf(cpf: string): boolean {
   const cleanedCpf = cpf.replace(/\D/g, '')
-  
+
   if (cleanedCpf.length !== 11) return false
   if (/^(\d)\1{10}$/.test(cleanedCpf)) return false
-  
+
   let sum = 0
   for (let i = 0; i < 9; i++) {
     sum += parseInt(cleanedCpf.charAt(i)) * (10 - i)
   }
-  
+
   let firstDigit = 11 - (sum % 11)
   if (firstDigit >= 10) firstDigit = 0
-  
+
   if (parseInt(cleanedCpf.charAt(9)) !== firstDigit) return false
-  
+
   sum = 0
   for (let i = 0; i < 10; i++) {
     sum += parseInt(cleanedCpf.charAt(i)) * (11 - i)
   }
-  
+
   let secondDigit = 11 - (sum % 11)
   if (secondDigit >= 10) secondDigit = 0
-  
+
   return parseInt(cleanedCpf.charAt(10)) === secondDigit
 }
 

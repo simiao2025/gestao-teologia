@@ -1,22 +1,26 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import Layout from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge, StatusBadge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 import { formatDate, maskCpf, maskPhone, formatCurrency } from '@/lib/utils'
-import { 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
   Eye,
   Users,
-  Filter
+  Filter,
+  ChevronLeft
 } from 'lucide-react'
+import { FeedbackDialog, FeedbackType } from '@/components/ui/feedback-dialog'
 
 interface AlunoWithDetails {
   id: string
@@ -29,10 +33,12 @@ interface AlunoWithDetails {
   status: 'ativo' | 'trancado' | 'concluído'
   subnucleo_id: string
   subnucleo_nome?: string
+  nivel_atual?: string
   criado_em: string
 }
 
 export default function AlunosPage() {
+  const { user, handleLogout } = useAuth()
   const [alunos, setAlunos] = useState<AlunoWithDetails[]>([])
   const [subnucleos, setSubnucleos] = useState<any[]>([])
   const [filteredAlunos, setFilteredAlunos] = useState<AlunoWithDetails[]>([])
@@ -41,73 +47,24 @@ export default function AlunosPage() {
   const [subnucleoFilter, setSubnucleoFilter] = useState('')
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    loadAlunos()
-    loadSubnucleos()
-  }, [])
+  // Feedback State
+  const [feedback, setFeedback] = useState<{
+    isOpen: boolean,
+    title: string,
+    message: string,
+    type: FeedbackType
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  })
 
-  useEffect(() => {
-    filterAlunos()
-  }, [alunos, searchTerm, statusFilter, subnucleoFilter])
-
-  const loadAlunos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('alunos')
-        .select(`
-          *,
-          usuarios (
-            nome,
-            email,
-            telefone
-          ),
-          subnucleos (
-            nome
-          )
-        `)
-        .order('criado_em', { ascending: false })
-
-      if (error) {
-        console.error('Erro ao carregar alunos:', error)
-        return
-      }
-
-      const alunosFormatados = data?.map(aluno => ({
-        id: aluno.id,
-        nome: aluno.usuarios?.nome || '',
-        email: aluno.usuarios?.email || '',
-        telefone: aluno.usuarios?.telefone || '',
-        cpf: aluno.cpf,
-        data_nascimento: aluno.data_nascimento,
-        endereco: aluno.endereco,
-        status: aluno.status,
-        subnucleo_id: aluno.subnucleo_id,
-        subnucleo_nome: aluno.subnucleos?.nome,
-        criado_em: aluno.criado_em
-      })) || []
-
-      setAlunos(alunosFormatados)
-    } catch (error) {
-      console.error('Erro:', error)
-    } finally {
-      setIsLoading(false)
-    }
+  const showFeedback = (title: string, message: string, type: FeedbackType = 'info') => {
+    setFeedback({ isOpen: true, title, message, type })
   }
 
-  const loadSubnucleos = async () => {
-    try {
-      const { data } = await supabase
-        .from('subnucleos')
-        .select('*')
-        .order('nome')
-
-      setSubnucleos(data || [])
-    } catch (error) {
-      console.error('Erro ao carregar subnúcleos:', error)
-    }
-  }
-
-  const filterAlunos = () => {
+  const filterAlunos = React.useCallback(() => {
     let filtered = alunos
 
     if (searchTerm) {
@@ -127,10 +84,83 @@ export default function AlunosPage() {
     }
 
     setFilteredAlunos(filtered)
+  }, [alunos, searchTerm, statusFilter, subnucleoFilter])
+
+  useEffect(() => {
+    loadAlunos()
+    loadSubnucleos()
+  }, [])
+
+  useEffect(() => {
+    filterAlunos()
+  }, [filterAlunos])
+
+  const loadAlunos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('alunos')
+        .select(`
+          *,
+          usuarios (
+            nome,
+            email,
+            telefone
+          ),
+          subnucleos (
+            nome
+          ),
+          niveis (
+            nome
+          )
+        `)
+        .order('criado_em', { ascending: false })
+
+      if (error) {
+        console.error('Erro ao carregar alunos:', error)
+        showFeedback('Erro', 'Não foi possível carregar os alunos: ' + error.message, 'error')
+        return
+      }
+
+      const alunosFormatados = data?.map(aluno => ({
+        id: aluno.id,
+        nome: aluno.usuarios?.nome || '',
+        email: aluno.usuarios?.email || '',
+        telefone: aluno.usuarios?.telefone || '',
+        cpf: aluno.cpf,
+        data_nascimento: aluno.data_nascimento,
+        endereco: aluno.endereco,
+        status: aluno.status,
+        subnucleo_id: aluno.subnucleo_id,
+        subnucleo_nome: aluno.subnucleos?.nome,
+        nivel_atual: aluno.niveis?.nome,
+        criado_em: aluno.criado_em
+      })) || []
+
+      setAlunos(alunosFormatados)
+    } catch (error: any) {
+      console.error('Erro:', error)
+      showFeedback('Erro', `Erro interno ao carregar alunos: ${error.message || 'Desconhecido'}`, 'error')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const deleteAluno = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este aluno?')) {
+  const loadSubnucleos = async () => {
+    try {
+      const { data } = await supabase
+        .from('subnucleos')
+        .select('*')
+        .order('nome')
+
+      setSubnucleos(data || [])
+    } catch (error: any) {
+      console.error('Erro ao carregar subnúcleos:', error)
+      showFeedback('Erro', `Erro ao carregar subnúcleos: ${error.message || 'Desconhecido'}`, 'error')
+    }
+  }
+
+  const deleteAluno = async (id: string, nome: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o aluno ${nome}?`)) {
       return
     }
 
@@ -141,20 +171,29 @@ export default function AlunosPage() {
         .eq('id', id)
 
       if (error) {
-        alert('Erro ao excluir aluno: ' + error.message)
+        console.error('Erro ao excluir aluno:', error)
+        showFeedback('Erro', 'Não foi possível excluir o aluno: ' + error.message, 'error')
         return
       }
 
-      setAlunos(alunos.filter(a => a.id !== id))
-      alert('Aluno excluído com sucesso!')
-    } catch (error) {
-      alert('Erro interno do servidor')
+      showFeedback('Sucesso!', 'Aluno excluído com sucesso.', 'success')
+      loadAlunos()
+    } catch (error: any) {
+      console.error('Erro interno ao excluir aluno:', error)
+      showFeedback('Erro', `Erro interno: ${error.message || 'Desconhecido'}`, 'error')
     }
   }
 
   if (isLoading) {
     return (
-      <Layout>
+      <Layout title="Alunos" user={user} onLogout={handleLogout}>
+        <FeedbackDialog
+          isOpen={feedback.isOpen}
+          onClose={() => setFeedback(prev => ({ ...prev, isOpen: false }))}
+          title={feedback.title}
+          message={feedback.message}
+          type={feedback.type}
+        />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span className="ml-2">Carregando alunos...</span>
@@ -164,12 +203,20 @@ export default function AlunosPage() {
   }
 
   return (
-    <Layout>
+    <Layout user={user} onLogout={handleLogout}>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gerenciar Alunos</h1>
-            <p className="text-gray-600">Visualize e gerencie os alunos do curso</p>
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" asChild className="rounded-full flex items-center gap-1">
+              <Link href="/dashboard">
+                <ChevronLeft className="h-4 w-4" />
+                Voltar
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Alunos</h1>
+              <p className="text-gray-600">Gerenciamento de matrículas e perfis</p>
+            </div>
           </div>
           <Button asChild>
             <a href="/dashboard/alunos/novo">
@@ -307,6 +354,7 @@ export default function AlunosPage() {
                       <th className="text-left p-3">Aluno</th>
                       <th className="text-left p-3">Contato</th>
                       <th className="text-left p-3">Subnúcleo</th>
+                      <th className="text-left p-3">Nível</th>
                       <th className="text-left p-3">Status</th>
                       <th className="text-left p-3">Data Matrícula</th>
                       <th className="text-left p-3">Ações</th>
@@ -331,6 +379,9 @@ export default function AlunosPage() {
                           <span className="text-sm">{aluno.subnucleo_nome || 'Não informado'}</span>
                         </td>
                         <td className="p-3">
+                          <Badge variant="outline">{aluno.nivel_atual || 'N/A'}</Badge>
+                        </td>
+                        <td className="p-3">
                           <StatusBadge status={aluno.status} />
                         </td>
                         <td className="p-3">
@@ -344,8 +395,8 @@ export default function AlunosPage() {
                             <Button size="sm" variant="outline">
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="outline"
                               onClick={() => deleteAluno(aluno.id)}
                             >

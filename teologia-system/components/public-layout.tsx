@@ -2,8 +2,10 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import Image from 'next/image'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { BookOpen, Phone, Mail, MapPin } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface PublicLayoutProps {
   children: React.ReactNode
@@ -11,8 +13,6 @@ interface PublicLayoutProps {
 
 const navigation = [
   { name: 'Início', href: '/' },
-  { name: 'Sobre', href: '/sobre' },
-  { name: 'Disciplinas', href: '/disciplinas' },
   { name: 'Matrícula', href: '/matricula' },
 ]
 
@@ -25,8 +25,14 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
               <Link href="/" className="flex items-center space-x-2">
-                <BookOpen className="h-8 w-8 text-blue-600" />
-                <span className="text-xl font-bold text-gray-900">Curso de Teologia</span>
+                <Image
+                  src="/icons/Logo-EETAD.png"
+                  alt="Logo EETAD"
+                  width={40}
+                  height={40}
+                  className="h-10 w-auto"
+                />
+                <span className="text-xl font-bold text-gray-900">Núcleo Palmas - TO</span>
               </Link>
             </div>
 
@@ -44,12 +50,18 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
             </nav>
 
             <div className="hidden md:flex items-center space-x-4">
-              <Button asChild variant="outline">
-                <Link href="/login">Entrar</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/matricula">Matricular-se</Link>
-              </Button>
+              <Link
+                href="/login"
+                className={cn(buttonVariants({ variant: 'outline' }), "border-blue-600 text-blue-600 hover:bg-blue-50")}
+              >
+                Área do Aluno
+              </Link>
+              <Link
+                href="/dashboard/login"
+                className={cn(buttonVariants({ variant: 'default' }), "bg-blue-900 hover:bg-blue-800")}
+              >
+                Área Administrativa
+              </Link>
             </div>
 
             {/* Mobile menu button */}
@@ -76,11 +88,17 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
             {/* Logo and description */}
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
-                <BookOpen className="h-8 w-8 text-blue-400" />
-                <span className="text-xl font-bold">Curso de Teologia</span>
+                <Image
+                  src="/icons/Logo-EETAD.png"
+                  alt="Logo EETAD"
+                  width={40}
+                  height={40}
+                  className="h-10 w-auto"
+                />
+                <span className="text-xl font-bold">Núcleo Palmas - TO</span>
               </div>
               <p className="text-gray-300 mb-4">
-                Formando líderes cristãos com excelência acadêmica e espiritual. 
+                Formando líderes cristãos com excelência acadêmica e espiritual.
                 Nossa missão é desenvolver ministeriais preparados para servir a Deus e a comunidade.
               </p>
               <div className="flex space-x-4">
@@ -139,7 +157,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
           <div className="border-t border-gray-800 mt-8 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-400 text-sm">
-                © 2024 Curso de Teologia. Todos os direitos reservados.
+                © 2024 Núcleo Palmas - TO. Todos os direitos reservados.
               </p>
               <div className="flex space-x-6 mt-4 md:mt-0">
                 <Link href="/privacidade" className="text-gray-400 hover:text-white text-sm transition-colors">
