@@ -26,6 +26,8 @@ const getStatusBadge = (status: string) => {
 export default function StudentDisciplinesPage() {
     const [loading, setLoading] = useState(true)
     const [disciplines, setDisciplines] = useState<any[]>([])
+    const [subnucleoName, setSubnucleoName] = useState<string>('')
+    const [monitorsList, setMonitorsList] = useState<string[]>([])
     const [user, setUser] = useState<any>(null)
     const router = useRouter()
 
@@ -61,25 +63,116 @@ export default function StudentDisciplinesPage() {
 
     const loadDisciplines = async (userId: string) => {
         try {
-            const { data, error } = await supabase
+            setLoading(true)
+
+            // 1. Tentar buscar dados do aluno via tabela de usuarios (relação 1:1)
+            let subnucleoNomeInfo = ''
+            let subnucleoIdInfo = ''
+
+            // Busca via Usuario -> Alunos -> Subnucleos
+            const { data: userData } = await supabase
+                .from('usuarios')
+                .select(`
+                    id,
+                    alunos (
+                        id,
+                        subnucleo_id,
+                        subnucleos (nome)
+                    )
+                `)
+                .eq('id', userId)
+                .maybeSingle()
+
+            if (userData?.alunos) {
+                const aluno = Array.isArray(userData.alunos) ? userData.alunos[0] : userData.alunos
+                if (aluno) {
+                    subnucleoIdInfo = aluno.subnucleo_id
+                    const sub = Array.isArray(aluno.subnucleos) ? aluno.subnucleos[0] : aluno.subnucleos
+                    subnucleoNomeInfo = sub?.nome || ''
+                }
+            }
+
+            setSubnucleoName(subnucleoNomeInfo || '')
+
+            // 2. Buscar disciplinas (Query Limpa sem Join problemático com alunos)
+            const { data: disciplinasData, error: discError } = await supabase
                 .from('alunos_disciplinas')
                 .select(`
-          *,
-          disciplinas (
-            nome,
-            codigo,
-            descricao,
-            niveis (
-              nome
-            )
-          )
-        `)
+                  *,
+                  disciplinas (
+                    id,
+                    nome,
+                    codigo,
+                    descricao,
+                    niveis (
+                      nome
+                    )
+                  )
+                `)
                 .eq('aluno_id', userId)
                 .order('criado_em', { ascending: false })
 
-            if (error) throw error
+            if (discError) throw discError
 
-            setDisciplines(data || [])
+            let finalData = disciplinasData || []
+
+            // 3. Buscar monitores considerando o histórico de subnúcleos
+            if (finalData.length > 0) {
+                // Coletar todos os IDs de subnúcleo relevantes (do histórico ou do atual)
+                const subnucleoIds = new Set<string>()
+
+                if (subnucleoIdInfo) subnucleoIds.add(subnucleoIdInfo)
+
+                finalData.forEach(item => {
+                    if (item.subnucleo_id) {
+                        subnucleoIds.add(item.subnucleo_id)
+                    }
+                })
+
+                const uniqueSubIds = Array.from(subnucleoIds)
+                const disciplinaIds = finalData.map(d => d.disciplina_id)
+
+                let escalasData: any[] = []
+
+                if (uniqueSubIds.length > 0) {
+                    const { data: escalas } = await supabase
+                        .from('escalas_monitores')
+                        .select(`
+                            disciplina_id,
+                            subnucleo_id,
+                            monitor:usuarios!monitor_id(nome)
+                        `)
+                        .in('subnucleo_id', uniqueSubIds)
+                        .in('disciplina_id', disciplinaIds)
+
+                    if (escalas) escalasData = escalas
+                }
+
+                // Criar mapa composto: Chave = "SubID_DiscID" -> NomeMonitor
+                const monitorMap: Record<string, string> = {}
+
+                escalasData?.forEach((escala: any) => {
+                    if (escala.monitor?.nome) {
+                        // Chave composta para garantir unicidade por subnúcleo
+                        const key = `${escala.subnucleo_id}_${escala.disciplina_id}`
+                        monitorMap[key] = escala.monitor.nome
+                    }
+                })
+
+                // Anexar info ao array final
+                finalData = finalData.map(item => {
+                    // Determinar qual subnúcleo usar para este item
+                    const targetSubId = item.subnucleo_id || subnucleoIdInfo
+                    const key = `${targetSubId}_${item.disciplina_id}`
+
+                    return {
+                        ...item,
+                        monitorNome: monitorMap[key] || 'Não definido'
+                    }
+                })
+            }
+
+            setDisciplines(finalData)
         } catch (error) {
             console.error('Error loading disciplines:', error)
         } finally {
@@ -104,6 +197,14 @@ export default function StudentDisciplinesPage() {
                 </Button>
             </div>
 
+            {/* Info Section - Subnúcleo */}
+            {subnucleoName && (
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">Seu Subnúcleo</span>
+                    <span className="text-lg font-bold text-gray-900">{subnucleoName}</span>
+                </div>
+            )}
+
             <Card>
                 <CardContent className="p-0">
                     {disciplines.length > 0 ? (
@@ -127,6 +228,9 @@ export default function StudentDisciplinesPage() {
                                     {disciplines.map((item) => (
                                         <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="p-4">
+                                                <div className="text-xs font-medium text-blue-600 mb-1">
+                                                    Monitor: {item.monitorNome}
+                                                </div>
                                                 <div className="font-medium text-gray-900">{item.disciplinas?.nome}</div>
                                                 <div className="text-xs text-gray-500 font-mono uppercase">{item.disciplinas?.codigo}</div>
                                             </td>

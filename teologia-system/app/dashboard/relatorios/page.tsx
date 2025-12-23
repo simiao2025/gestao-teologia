@@ -12,9 +12,16 @@ import { supabase } from '@/lib/supabase'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { Printer, Filter, Calendar, BookOpen, MapPin, Search, ChevronLeft, AlertCircle } from 'lucide-react'
 import { FeedbackDialog, FeedbackType } from '@/components/ui/feedback-dialog'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function ReportsPage() {
+    const { user, handleLogout } = useAuth()
     const [activeTab, setActiveTab] = useState('pedidos')
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // Feedback State
     const [feedback, setFeedback] = useState<{
@@ -115,17 +122,37 @@ export default function ReportsPage() {
 
             // JS Filters for Relation Fields
             if (filters.subnucleoId !== 'all') {
-                result = result.filter(r => r.usuarios?.alunos?.[0]?.subnucleo_id === filters.subnucleoId)
+                console.log('🔍 DEBUG - Filtrando por subnucleo:', filters.subnucleoId)
+                result = result.filter(r => {
+                    // Try to find subnucleo_id in the nested structure
+                    // alunos can be an object (single relation) or array (if configured as such)
+                    const alunoRecord = Array.isArray(r.usuarios?.alunos)
+                        ? r.usuarios?.alunos[0]
+                        : r.usuarios?.alunos;
+
+                    const subId = alunoRecord?.subnucleo_id;
+                    return subId === filters.subnucleoId;
+                })
             }
 
             if (filters.disciplinaId !== 'all') {
-                result = result.filter(r => r.disciplinas?.id === filters.disciplinaId)
+                result = result.filter(r => {
+                    // Match by disciplina_id in the order or by the related discipline ID
+                    return r.disciplina_id === filters.disciplinaId || r.disciplinas?.id === filters.disciplinaId;
+                })
             }
 
             if (filters.studentName) {
                 const term = filters.studentName.toLowerCase()
-                result = result.filter(r => r.usuarios?.nome.toLowerCase().includes(term))
+                result = result.filter(r => r.usuarios?.nome?.toLowerCase().includes(term))
             }
+
+            // Sort by Subnucleo
+            result.sort((a, b) => {
+                const subA = (Array.isArray(a.usuarios?.alunos) ? a.usuarios?.alunos[0] : a.usuarios?.alunos)?.subnucleos?.nome || '';
+                const subB = (Array.isArray(b.usuarios?.alunos) ? b.usuarios?.alunos[0] : b.usuarios?.alunos)?.subnucleos?.nome || '';
+                return subA.localeCompare(subB);
+            });
 
             setReportData(result)
 
@@ -146,7 +173,7 @@ export default function ReportsPage() {
     }
 
     return (
-        <Layout>
+        <Layout user={user} onLogout={handleLogout}>
             <FeedbackDialog
                 isOpen={feedback.isOpen}
                 onClose={() => setFeedback(prev => ({ ...prev, isOpen: false }))}
@@ -284,27 +311,16 @@ export default function ReportsPage() {
                             </CardContent>
                         </Card>
 
-                        {/* Print Header - Visible only on Print */}
-                        <div className="hidden print:block text-center mb-8">
-                            <h2 className="text-2xl font-bold">Relatório de Pedidos</h2>
-                            <p>Gerado em: {new Date().toLocaleDateString()} às {new Date().toLocaleTimeString()}</p>
+                        {/* Report Header - Logo and Title */}
+                        <div className="text-center mb-6 pt-6">
+                            <img src="/icons/EETAD-PRV.png" alt="EETAD" className="h-20 mx-auto mb-2" />
+                            <h2 className="text-xl font-bold uppercase tracking-wide text-gray-900">EETAD - Núcleo Palmas TO</h2>
                         </div>
 
                         {/* Results */}
                         <Card className="print:shadow-none print:border-none">
                             <CardContent className="p-0">
-                                <div className="p-4 bg-blue-50 border-b flex justify-between items-center print:bg-white print:border-b-2">
-                                    <div className="flex gap-6">
-                                        <div>
-                                            <span className="text-sm text-gray-500 block">Total de Registros</span>
-                                            <span className="text-xl font-bold">{summary.count}</span>
-                                        </div>
-                                        <div>
-                                            <span className="text-sm text-gray-500 block">Valor Total</span>
-                                            <span className="text-xl font-bold text-green-600">{formatCurrency(summary.total)}</span>
-                                        </div>
-                                    </div>
-                                </div>
+
 
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm">
@@ -313,7 +329,6 @@ export default function ReportsPage() {
                                                 <th className="text-left p-3 font-medium">Data</th>
                                                 <th className="text-left p-3 font-medium">Aluno</th>
                                                 <th className="text-left p-3 font-medium">Subnúcleo</th>
-                                                <th className="text-left p-3 font-medium">Disciplina</th>
                                                 <th className="text-left p-3 font-medium">Status</th>
                                                 <th className="text-right p-3 font-medium">Valor</th>
                                             </tr>
@@ -327,11 +342,9 @@ export default function ReportsPage() {
                                                         <div className="text-xs text-gray-500">{row.usuarios?.email}</div>
                                                     </td>
                                                     <td className="p-3 text-gray-600">
-                                                        {row.usuarios?.alunos?.[0]?.subnucleos?.nome || '-'}
-                                                    </td>
-                                                    <td className="p-3">
-                                                        <div className="font-medium">{row.disciplinas?.nome}</div>
-                                                        <div className="text-xs text-gray-500">{row.disciplinas?.codigo}</div>
+                                                        {(Array.isArray(row.usuarios?.alunos)
+                                                            ? row.usuarios?.alunos[0]?.subnucleos?.nome
+                                                            : row.usuarios?.alunos?.subnucleos?.nome) || '-'}
                                                     </td>
                                                     <td className="p-3 capitalize">{row.status}</td>
                                                     <td className="p-3 text-right font-medium">{formatCurrency(row.valor)}</td>
@@ -339,13 +352,25 @@ export default function ReportsPage() {
                                             ))}
                                             {reportData.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={6} className="p-8 text-center text-gray-500">
+                                                    <td colSpan={5} className="p-8 text-center text-gray-500">
                                                         Nenhum dado encontrado para os filtros selecionados.
                                                     </td>
                                                 </tr>
                                             )}
                                         </tbody>
                                     </table>
+                                </div>
+
+                                {/* Footer Summary */}
+                                <div className="p-6 bg-gray-50 border-t flex flex-row justify-end items-center gap-12 print:bg-white print:border-t-2 print:mt-4">
+                                    <div className="text-right">
+                                        <span className="text-sm text-gray-500 block uppercase tracking-wide">Total de Registros</span>
+                                        <span className="text-2xl font-bold text-gray-800">{summary.count}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-sm text-gray-500 block uppercase tracking-wide">Valor Total</span>
+                                        <span className="text-2xl font-bold text-green-700">{formatCurrency(summary.total)}</span>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -359,6 +384,6 @@ export default function ReportsPage() {
                     </div>
                 )}
             </div>
-        </Layout>
+        </Layout >
     )
 }

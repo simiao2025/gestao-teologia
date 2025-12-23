@@ -27,13 +27,28 @@ export function PixModal({ open, onOpenChange, pedido, user, onPaymentSuccess }:
             setLoading(true)
             setPaymentStatus('pending')
             try {
+                // Obter Device ID para segurança/fraude (Aumenta o score de integração)
+                let deviceId = ''
+                if (typeof window !== 'undefined' && (window as any).MercadoPago) {
+                    try {
+                        const mp = new (window as any).MercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY)
+                        // V2 usa getDeviceId() em vez de getFingerprint()
+                        if (typeof mp.getDeviceId === 'function') {
+                            deviceId = mp.getDeviceId()
+                        }
+                    } catch (e) {
+                        console.error('Erro ao obter deviceId:', e)
+                    }
+                }
+
                 const response = await fetch('/api/pix/mp-criar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         pedidoId: pedido.id,
                         userEmail: user.email,
-                        userName: user.user_metadata?.nome || user.email
+                        userName: user.user_metadata?.nome || user.email,
+                        deviceId: deviceId
                     })
                 })
 
@@ -64,6 +79,12 @@ export function PixModal({ open, onOpenChange, pedido, user, onPaymentSuccess }:
                     .eq('id', pedido.id)
                     .single()
 
+                if (error) {
+                    console.error('Erro polling:', error)
+                } else {
+                    console.log('Polling Status do pedido', pedido.id, ':', data?.status)
+                }
+
                 if (data?.status === 'pago') {
                     setPaymentStatus('approved')
                     clearInterval(interval)
@@ -89,60 +110,79 @@ export function PixModal({ open, onOpenChange, pedido, user, onPaymentSuccess }:
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>
-                        {paymentStatus === 'approved' ? 'Pagamento Confirmado!' : 'Pagamento via PIX'}
-                    </DialogTitle>
-                    <DialogDescription>
+                <DialogHeader className="flex flex-col items-center justify-center text-center space-y-1">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                        <img src="/icons/pix.png" alt="Logo PIX" className="h-6 w-auto" />
+                        <DialogTitle className="text-xl font-bold text-gray-900 leading-none">
+                            {paymentStatus === 'approved' ? 'Pagamento Confirmado!' : 'Pagamento via PIX'}
+                        </DialogTitle>
+                    </div>
+                    <DialogDescription className="text-sm text-gray-500 max-w-[280px]">
                         {paymentStatus === 'approved'
                             ? 'Obrigado! Seu pagamento foi processado com sucesso.'
                             : 'Escaneie o QR Code abaixo ou utilize o "Copia e Cola" para pagar.'}
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="flex flex-col items-center justify-center p-4">
+                <div className="flex flex-col items-center justify-center p-0 mt-4">
                     {paymentStatus === 'approved' ? (
-                        <div className="flex flex-col items-center justify-center py-8 space-y-4 animate-in zoom-in duration-300">
-                            <CheckCircle2 className="h-20 w-20 text-green-500" />
-                            <p className="text-xl font-bold text-gray-900 text-center">Tudo certo!</p>
-                            <p className="text-sm text-gray-500 text-center">
-                                Redirecionando você em instantes...
-                            </p>
+                        <div className="flex flex-col items-center justify-center py-12 space-y-4 animate-in zoom-in duration-300">
+                            <div className="h-24 w-24 rounded-full bg-green-50 flex items-center justify-center">
+                                <CheckCircle2 className="h-16 w-16 text-green-500" />
+                            </div>
+                            <div className="space-y-1 text-center">
+                                <p className="text-xl font-bold text-gray-900">Pagamento Aprovado!</p>
+                                <p className="text-sm text-gray-500">
+                                    Seu acesso será liberado em instantes...
+                                </p>
+                            </div>
                         </div>
                     ) : (
                         <>
-                            <div className="bg-white p-4 rounded-lg shadow-sm border mb-4 relative min-h-[232px] min-w-[232px] flex items-center justify-center">
-                                {loading ? (
-                                    <div className="flex flex-col items-center space-y-2">
-                                        <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-                                        <span className="text-xs text-gray-500">Gerando QR Code...</span>
-                                    </div>
-                                ) : qrCodeData ? (
-                                    <img src={qrCodeData} alt="QR Code PIX Mercado Pago" className="w-[200px] h-[200px]" />
-                                ) : (
-                                    <div className="h-[200px] w-[200px] flex items-center justify-center bg-gray-100 rounded-md">
-                                        <span className="text-gray-400 text-xs text-center px-4">
-                                            Não foi possível gerar o QR Code. Tente novamente.
-                                        </span>
-                                    </div>
-                                )}
+                            <div className="relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl blur opacity-10 group-hover:opacity-20 transition duration-1000 group-hover:duration-200"></div>
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 relative min-h-[248px] min-w-[248px] flex items-center justify-center overflow-hidden">
+                                    {loading ? (
+                                        <div className="flex flex-col items-center space-y-3">
+                                            <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
+                                            <span className="text-xs font-medium text-gray-400">Gerando QR Code único...</span>
+                                        </div>
+                                    ) : qrCodeData ? (
+                                        <div className="relative animate-in fade-in zoom-in duration-500">
+                                            <img src={qrCodeData} alt="QR Code PIX Mercado Pago" className="w-[200px] h-[200px]" />
+                                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-1 rounded-lg">
+                                                <img src="/icons/pix.png" alt="Pix small" className="h-6 w-6 opacity-30" />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="h-[200px] w-[200px] flex items-center justify-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                                            <span className="text-gray-400 text-xs text-center px-6 leading-relaxed">
+                                                Não foi possível gerar o código. <br /> Por favor, feche e tente novamente.
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="w-full space-y-2">
-                                <p className="text-sm font-medium text-center text-gray-700">
-                                    Valor: R$ {Number(pedido?.valor).toFixed(2).replace('.', ',')}
-                                </p>
+                            <div className="w-full space-y-4 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                                <div className="flex flex-col items-center space-y-1">
+                                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Valor do Investimento</span>
+                                    <p className="text-2xl font-black text-gray-900 tracking-tight">
+                                        R$ {Number(pedido?.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </p>
+                                </div>
+
                                 <div className="flex flex-col space-y-2">
                                     <Button
-                                        variant="outline"
-                                        className="w-full relative"
+                                        variant="default"
+                                        className={`w-full h-11 transition-all duration-300 ${copied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-900 hover:bg-black'} text-white font-semibold rounded-xl`}
                                         onClick={handleCopy}
                                         disabled={!copiaCola}
                                     >
                                         {copied ? (
                                             <>
-                                                <Check className="h-4 w-4 mr-2 text-green-600" />
-                                                Copiado!
+                                                <Check className="h-4 w-4 mr-2" />
+                                                Código Copiado!
                                             </>
                                         ) : (
                                             <>
@@ -152,9 +192,13 @@ export function PixModal({ open, onOpenChange, pedido, user, onPaymentSuccess }:
                                         )}
                                     </Button>
 
-                                    <div className="flex items-center justify-center space-x-2 text-[10px] text-gray-400 pt-2 italic">
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                        <span>Aguardando confirmação do pagamento...</span>
+                                    <div className="flex items-center justify-center space-x-2 text-[10px] text-gray-400 pt-1">
+                                        <div className="flex space-x-1">
+                                            <div className="h-1.5 w-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                                            <div className="h-1.5 w-1.5 bg-blue-500 rounded-full animate-pulse delay-75"></div>
+                                            <div className="h-1.5 w-1.5 bg-blue-500 rounded-full animate-pulse delay-150"></div>
+                                        </div>
+                                        <span className="font-medium">Validando pagamento automaticamente...</span>
                                     </div>
                                 </div>
                             </div>
@@ -162,8 +206,14 @@ export function PixModal({ open, onOpenChange, pedido, user, onPaymentSuccess }:
                     )}
                 </div>
 
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Fechar</Button>
+                <DialogFooter className="mt-4 sm:justify-center border-t pt-4">
+                    <Button
+                        variant="ghost"
+                        className="text-gray-400 hover:text-gray-600 font-medium text-xs uppercase tracking-widest"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        Cancelar Operação
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

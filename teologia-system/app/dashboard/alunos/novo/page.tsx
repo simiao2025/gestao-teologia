@@ -19,6 +19,8 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { FeedbackDialog, FeedbackType } from '@/components/ui/feedback-dialog'
+import Link from 'next/link'
+import { ESTADOS_CIVIS, ESCOLARIDADE, UFS } from '@/constants/student'
 
 export default function NovoAlunoPage() {
     const { user, handleLogout } = useAuth()
@@ -40,6 +42,9 @@ export default function NovoAlunoPage() {
         type: 'info'
     })
 
+    const [error, setError] = useState('')
+    const [success, setSuccess] = useState('')
+
     const showFeedback = (title: string, message: string, type: FeedbackType = 'info') => {
         setFeedback({ isOpen: true, title, message, type })
     }
@@ -49,10 +54,23 @@ export default function NovoAlunoPage() {
         email: '',
         telefone: '',
         cpf: '',
+        rg: '',
         data_nascimento: '',
         endereco: '',
         subnucleo_id: '',
-        nivel_id: ''
+        nivel_id: '',
+        estado_civil: '',
+        naturalidade: '',
+        uf_nascimento: '',
+        escolaridade: '',
+        profissao: '',
+        cargo_igreja: '',
+        congregacao: '',
+        ja_estudou_teologia: false,
+        instituicao_teologia: '',
+        cidade: '',
+        uf: '',
+        cep: ''
     })
 
     useEffect(() => {
@@ -112,7 +130,20 @@ export default function NovoAlunoPage() {
                     p_data_nascimento: formData.data_nascimento,
                     p_endereco: formData.endereco,
                     p_subnucleo_id: formData.subnucleo_id,
-                    p_nivel_id: formData.nivel_id
+                    p_nivel_id: formData.nivel_id,
+                    p_rg: formData.rg,
+                    p_estado_civil: formData.estado_civil,
+                    p_naturalidade: formData.naturalidade,
+                    p_uf_nascimento: formData.uf_nascimento,
+                    p_escolaridade: formData.escolaridade,
+                    p_profissao: formData.profissao,
+                    p_cargo_igreja: formData.cargo_igreja,
+                    p_congregacao: formData.congregacao,
+                    p_ja_estudou_teologia: formData.ja_estudou_teologia,
+                    p_instituicao_teologia: formData.ja_estudou_teologia ? formData.instituicao_teologia : null,
+                    p_cidade: formData.cidade,
+                    p_uf: formData.uf,
+                    p_cep: formData.cep
                 })
 
             if (createError) {
@@ -159,7 +190,12 @@ export default function NovoAlunoPage() {
         <Layout title="Novo Aluno" user={user} onLogout={handleLogout}>
             <FeedbackDialog
                 isOpen={feedback.isOpen}
-                onClose={() => setFeedback(prev => ({ ...prev, isOpen: false }))}
+                onClose={() => {
+                    setFeedback(prev => ({ ...prev, isOpen: false }))
+                    if (feedback.type === 'success') {
+                        router.push('/dashboard/alunos')
+                    }
+                }}
                 title={feedback.title}
                 message={feedback.message}
                 type={feedback.type}
@@ -275,18 +311,218 @@ export default function NovoAlunoPage() {
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-2 col-span-1 md:col-span-2">
                                 <label htmlFor="endereco" className="text-sm font-medium text-gray-700 flex items-center">
                                     <MapPin className="h-4 w-4 mr-1" />
-                                    Endereço Completo *
+                                    Endereço (Rua, Número, Bairro) *
                                 </label>
                                 <Input
                                     id="endereco"
-                                    placeholder="Rua, número, bairro, cidade, estado"
+                                    placeholder="Rua, número, bairro"
                                     value={formData.endereco}
                                     onChange={e => setFormData({ ...formData, endereco: e.target.value })}
                                 />
                             </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 col-span-1 md:col-span-2">
+                                <div className="space-y-2">
+                                    <label htmlFor="cidade" className="text-sm font-medium text-gray-700">
+                                        Cidade *
+                                    </label>
+                                    <Input
+                                        id="cidade"
+                                        placeholder="Sua cidade"
+                                        value={formData.cidade}
+                                        onChange={e => setFormData({ ...formData, cidade: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="uf" className="text-sm font-medium text-gray-700">
+                                        UF *
+                                    </label>
+                                    <select
+                                        id="uf"
+                                        value={formData.uf}
+                                        onChange={e => setFormData({ ...formData, uf: e.target.value })}
+                                        className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                                    >
+                                        <option value="">...</option>
+                                        {UFS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="cep" className="text-sm font-medium text-gray-700">
+                                        CEP *
+                                    </label>
+                                    <Input
+                                        id="cep"
+                                        placeholder="00000-000"
+                                        value={formData.cep}
+                                        onChange={e => setFormData({ ...formData, cep: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+
+                            <hr className="my-6 border-gray-200" />
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Dados Complementares</h3>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label htmlFor="rg" className="text-sm font-medium text-gray-700">
+                                        RG *
+                                    </label>
+                                    <Input
+                                        id="rg"
+                                        placeholder="Número do RG"
+                                        value={formData.rg}
+                                        onChange={e => setFormData({ ...formData, rg: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="estado_civil" className="text-sm font-medium text-gray-700">
+                                        Estado Civil *
+                                    </label>
+                                    <select
+                                        id="estado_civil"
+                                        value={formData.estado_civil}
+                                        onChange={e => setFormData({ ...formData, estado_civil: e.target.value })}
+                                        className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {ESTADOS_CIVIS.map(item => <option key={item} value={item}>{item}</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="naturalidade" className="text-sm font-medium text-gray-700">
+                                        Cidade de Nascimento *
+                                    </label>
+                                    <Input
+                                        id="naturalidade"
+                                        placeholder="Cidade onde nasceu"
+                                        value={formData.naturalidade}
+                                        onChange={e => setFormData({ ...formData, naturalidade: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="uf_nascimento" className="text-sm font-medium text-gray-700">
+                                        UF de Nascimento *
+                                    </label>
+                                    <select
+                                        id="uf_nascimento"
+                                        value={formData.uf_nascimento}
+                                        onChange={e => setFormData({ ...formData, uf_nascimento: e.target.value })}
+                                        className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {UFS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="escolaridade" className="text-sm font-medium text-gray-700">
+                                        Escolaridade *
+                                    </label>
+                                    <select
+                                        id="escolaridade"
+                                        value={formData.escolaridade}
+                                        onChange={e => setFormData({ ...formData, escolaridade: e.target.value })}
+                                        className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {ESCOLARIDADE.map(item => <option key={item} value={item}>{item}</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="profissao" className="text-sm font-medium text-gray-700">
+                                        Profissão *
+                                    </label>
+                                    <Input
+                                        id="profissao"
+                                        placeholder="Sua profissão"
+                                        value={formData.profissao}
+                                        onChange={e => setFormData({ ...formData, profissao: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="cargo_igreja" className="text-sm font-medium text-gray-700">
+                                        Cargo na Igreja *
+                                    </label>
+                                    <Input
+                                        id="cargo_igreja"
+                                        placeholder="Cargo ou função"
+                                        value={formData.cargo_igreja}
+                                        onChange={e => setFormData({ ...formData, cargo_igreja: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="congregacao" className="text-sm font-medium text-gray-700">
+                                        Congregação *
+                                    </label>
+                                    <Input
+                                        id="congregacao"
+                                        placeholder="Nome da congregação"
+                                        value={formData.congregacao}
+                                        onChange={e => setFormData({ ...formData, congregacao: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <hr className="my-6 border-gray-200" />
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Origem Acadêmica</h3>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-700 block">
+                                        Já estudou Teologia? *
+                                    </label>
+                                    <div className="flex gap-4 mt-2">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="estudou_teologia"
+                                                checked={!formData.ja_estudou_teologia}
+                                                onChange={() => setFormData({ ...formData, ja_estudou_teologia: false, instituicao_teologia: '' })}
+                                                className="h-4 w-4 text-blue-600"
+                                            />
+                                            <span className="text-sm">Nunca Estudei Teologia</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="estudou_teologia"
+                                                checked={formData.ja_estudou_teologia}
+                                                onChange={() => setFormData({ ...formData, ja_estudou_teologia: true })}
+                                                className="h-4 w-4 text-blue-600"
+                                            />
+                                            <span className="text-sm">Sim, já estudei Teologia</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {formData.ja_estudou_teologia && (
+                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <label htmlFor="instituicao" className="text-sm font-medium text-gray-700">
+                                            Instituição que Estudou *
+                                        </label>
+                                        <Input
+                                            id="instituicao"
+                                            placeholder="Nome da instituição ou seminário"
+                                            value={formData.instituicao_teologia}
+                                            onChange={e => setFormData({ ...formData, instituicao_teologia: e.target.value })}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <hr className="my-6 border-gray-200" />
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações de Matrícula</h3>
 
                             <div className="space-y-2">
                                 <label htmlFor="subnucleo_id" className="text-sm font-medium text-gray-700">
@@ -326,17 +562,27 @@ export default function NovoAlunoPage() {
                                 </select>
                             </div>
 
-                            <Button
-                                type="submit"
-                                className="w-full"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? 'Processando...' : 'Cadastrar Aluno'}
-                            </Button>
+                            <div className="flex gap-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => router.push('/dashboard/alunos')}
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="flex-[2]"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? 'Processando...' : 'Cadastrar Aluno'}
+                                </Button>
+                            </div>
                         </form>
                     </CardContent>
                 </Card>
             </div>
-        </Layout>
+        </Layout >
     )
 }

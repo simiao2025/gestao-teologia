@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: Request) {
     try {
-        const { pedidoId, userEmail, userName } = await request.json()
+        const { pedidoId, userEmail, userName, deviceId } = await request.json()
 
         if (!pedidoId || !userEmail) {
             return NextResponse.json({ error: 'Pedido ID e Email são obrigatórios.' }, { status: 400 })
@@ -40,11 +40,11 @@ export async function POST(request: Request) {
 
         // Validar URL de notificação (MP não aceita localhost)
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
-        const notificationUrl = appUrl.includes('localhost')
-            ? undefined
-            : `${appUrl}/api/pix/mercado-pago/webhook`
+        const notificationUrl = (appUrl && !appUrl.includes('localhost'))
+            ? `${appUrl}/api/pix/mercado-pago/webhook`
+            : undefined
 
-        // 3. Criar pagamento PIX
+        // 3. Criar pagamento PIX com informações detalhadas (Melhora Score MP)
         const paymentBody = {
             transaction_amount: Number(pedido.valor),
             description: `Curso Teologia - ${pedido.disciplinas?.nome || 'Material Didático'}`,
@@ -54,11 +54,35 @@ export async function POST(request: Request) {
                 first_name: userName?.split(' ')[0] || 'Aluno',
                 last_name: userName?.split(' ').slice(1).join(' ') || 'Sistema',
             },
+            additional_info: {
+                items: [
+                    {
+                        id: pedido.disciplina_id || pedido.id,
+                        title: pedido.disciplinas?.nome || 'Material Didático',
+                        description: `Inscrição/Material para a disciplina: ${pedido.disciplinas?.nome || 'Teologia'}`,
+                        category_id: 'others', // Ou 'learning' se disponível
+                        quantity: 1,
+                        unit_price: Number(pedido.valor)
+                    }
+                ],
+                payer: {
+                    first_name: userName?.split(' ')[0] || 'Aluno',
+                    last_name: userName?.split(' ').slice(1).join(' ') || 'Sistema',
+                }
+            },
             notification_url: notificationUrl,
             external_reference: pedido.id,
         }
 
-        const mpResponse = await payment.create({ body: paymentBody })
+        const mpResponse = await payment.create({
+            body: paymentBody,
+            requestOptions: {
+                idempotencyKey: `${pedido.id}-${Date.now()}`,
+                extraHeaders: {
+                    'X-Device-Id': deviceId || ''
+                }
+            }
+        })
             .catch((err) => {
                 throw err
             })

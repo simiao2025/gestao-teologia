@@ -1,0 +1,10 @@
+﻿--- DIAGNOSTICO COMPLETO ---
+
+--- 1. Subnucleos ---
+Subnucleo: ARNO 44 (a5d900bc-b92c-42f1-8fb0-c5f6145c7f3f) | Monitor: null
+
+--- 2. Escalas ---
+Escala: Sub[a5d900bc-b92c-42f1-8fb0-c5f6145c7f3f] Disc[8471493f-0755-4310-9e37-20e31b3a6a06] Mon[855ba8d6-1a3a-4f17-8f56-46dbea70d53a]
+
+--- 3. Matriculas (all relevant) ---
+Matricula: Student[Simi├úo Alves da Costa Junior] Disc[8471493f-0755-4310-9e37-20e31b3a6a06] Sub[a5d900bc-b92c-42f1-8fb0-c5f6145c7f3f] Status[aprovado]

@@ -46,6 +46,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#2563eb" />
+        <script src="https://sdk.mercadopago.com/js/v2" async></script>
       </head>
       <body className={inter.className}>
         <ThemeProvider>

@@ -1,7 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { verifyAdminSession } from '@/lib/auth-server'
 
 export async function POST(req: Request) {
+    const { isAdmin, error: authError } = await verifyAdminSession()
+    if (!isAdmin) {
+        return NextResponse.json({ error: authError || 'Acesso negado' }, { status: 403 })
+    }
+
     console.log('API-USUARIOS [POST]: Início da requisição')
     try {
         const body = await req.json()
@@ -99,6 +105,11 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+    const { isAdmin, error: authError } = await verifyAdminSession()
+    if (!isAdmin) {
+        return NextResponse.json({ error: authError || 'Acesso negado' }, { status: 403 })
+    }
+
     try {
         const { id, nome, email, senha, tipo } = await req.json()
 
@@ -192,6 +203,11 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+    const { isAdmin, error: authError } = await verifyAdminSession()
+    if (!isAdmin) {
+        return NextResponse.json({ error: authError || 'Acesso negado' }, { status: 403 })
+    }
+
     try {
         const { searchParams } = new URL(req.url)
         const id = searchParams.get('id')

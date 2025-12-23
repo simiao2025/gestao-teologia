@@ -27,7 +27,9 @@ interface LayoutProps {
   user?: {
     nome: string
     tipo: string
+    email?: string // Added to support passing fuller user object
   }
+  title?: string
   onLogout?: () => void
 }
 
@@ -39,7 +41,7 @@ const navigation = [
   { name: 'Pedidos', href: '/dashboard/pedidos', icon: ShoppingCart },
   { name: 'Subnúcleos', href: '/dashboard/subnucleos', icon: Building2 },
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart },
-  { name: 'Lançar Notas', href: '/dashboard/monitor/lancamento', icon: GraduationCap },
+  { name: 'Lançar Notas', href: '/dashboard/lancamento', icon: GraduationCap },
   { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
 ]
 
@@ -61,7 +63,7 @@ export default function Layout({ children, user, onLogout }: LayoutProps) {
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Mobile sidebar */}
       <div className={cn(
-        'fixed inset-0 z-50 lg:hidden',
+        'fixed inset-0 z-50 lg:hidden print:hidden',
         sidebarOpen ? 'block' : 'hidden'
       )}>
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" />
@@ -126,7 +128,7 @@ export default function Layout({ children, user, onLogout }: LayoutProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col print:hidden">
         <div className="flex min-h-0 flex-1 flex-col bg-card border-r border-border">
           <div className="flex h-16 items-center px-4 border-b border-border">
             <h1 className="text-xl font-bold text-foreground truncate">{nomeSistema}</h1>
@@ -179,7 +181,7 @@ export default function Layout({ children, user, onLogout }: LayoutProps) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-md border-b border-border">
+        <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-md border-b border-border print:hidden">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
             <Button
               variant="ghost"
@@ -216,7 +218,7 @@ export default function Layout({ children, user, onLogout }: LayoutProps) {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 print:p-0 print:m-0">
           {children}
         </main>
       </div>

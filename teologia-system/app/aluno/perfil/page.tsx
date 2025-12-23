@@ -18,8 +18,21 @@ export default function StudentProfilePage() {
         nome: '',
         email: '',
         cpf: '',
+        rg: '',
         telefone: '',
         endereco: '',
+        cidade: '',
+        uf: '',
+        cep: '',
+        estado_civil: '',
+        naturalidade: '',
+        uf_nascimento: '',
+        escolaridade: '',
+        profissao: '',
+        cargo_igreja: '',
+        congregacao: '',
+        ja_estudou_teologia: false,
+        instituicao_teologia: '',
         subnucleo: ''
     })
 
@@ -106,7 +119,20 @@ export default function StudentProfilePage() {
                 .select(`
                     id,
                     cpf,
+                    rg,
                     endereco,
+                    cidade,
+                    estado,
+                    cep,
+                    estado_civil,
+                    naturalidade,
+                    uf_nascimento,
+                    escolaridade,
+                    profissao,
+                    cargo_igreja,
+                    congregacao,
+                    ja_estudou_teologia,
+                    instituicao_teologia,
                     subnucleo_id,
                     usuarios (
                         id,
@@ -130,7 +156,20 @@ export default function StudentProfilePage() {
                         .select(`
                             id,
                             cpf,
+                            rg,
                             endereco,
+                            cidade,
+                            estado,
+                            cep,
+                            estado_civil,
+                            naturalidade,
+                            uf_nascimento,
+                            escolaridade,
+                            profissao,
+                            cargo_igreja,
+                            congregacao,
+                            ja_estudou_teologia,
+                            instituicao_teologia,
                             subnucleo_id,
                             usuarios!inner (
                                 id,
@@ -156,8 +195,21 @@ export default function StudentProfilePage() {
                     nome: usuario?.nome || '',
                     email: usuario?.email || '',
                     cpf: data.cpf || '',
+                    rg: data.rg || '',
                     telefone: usuario?.telefone || '',
                     endereco: data.endereco || '',
+                    cidade: data.cidade || '',
+                    uf: data.estado || '',
+                    cep: data.cep || '',
+                    estado_civil: data.estado_civil || '',
+                    naturalidade: data.naturalidade || '',
+                    uf_nascimento: data.uf_nascimento || '',
+                    escolaridade: data.escolaridade || '',
+                    profissao: data.profissao || '',
+                    cargo_igreja: data.cargo_igreja || '',
+                    congregacao: data.congregacao || '',
+                    ja_estudou_teologia: data.ja_estudou_teologia || false,
+                    instituicao_teologia: data.instituicao_teologia || '',
                     subnucleo: (Array.isArray(data.subnucleos) ? data.subnucleos[0] : data.subnucleos)?.nome || 'Não vinculado'
                 })
             }
@@ -180,10 +232,22 @@ export default function StudentProfilePage() {
 
             if (userError) throw userError
 
-            // Update alunos (endereco)
+            // Update alunos (endereco, cidade, uf, cep, etc)
             const { error: studentError } = await supabase
                 .from('alunos')
-                .update({ endereco: formData.endereco })
+                .update({
+                    endereco: formData.endereco,
+                    cidade: formData.cidade,
+                    estado: formData.uf,
+                    cep: formData.cep,
+                    estado_civil: formData.estado_civil,
+                    escolaridade: formData.escolaridade,
+                    profissao: formData.profissao,
+                    cargo_igreja: formData.cargo_igreja,
+                    congregacao: formData.congregacao,
+                    ja_estudou_teologia: formData.ja_estudou_teologia,
+                    instituicao_teologia: formData.ja_estudou_teologia ? formData.instituicao_teologia : null
+                })
                 .eq('id', userId)
 
             if (studentError) throw studentError
@@ -201,12 +265,12 @@ export default function StudentProfilePage() {
         return <div className="p-8 text-center text-gray-500">Carregando perfil...</div>
     }
 
-    if (error) {
+    if (!userId && !loading) {
         return (
             <div className="space-y-6 max-w-2xl mx-auto">
                 <div className="text-center">
-                    <h1 className="text-3xl font-bold text-gray-900">Erro de Autenticação</h1>
-                    <p className="text-gray-600 mt-2">{error}</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Acesso Restrito</h1>
+                    <p className="text-gray-600 mt-2">Você precisa estar autenticado para acessar seu perfil.</p>
                 </div>
 
                 <Card>
@@ -263,13 +327,107 @@ export default function StudentProfilePage() {
                                 <Input id="cpf" value={formData.cpf} disabled className="bg-gray-100" />
                             </div>
                             <div className="space-y-2">
+                                <Label htmlFor="rg">RG</Label>
+                                <Input id="rg" value={formData.rg} disabled className="bg-gray-100" />
+                            </div>
+                            <div className="space-y-2">
                                 <Label htmlFor="subnucleo">Subnúcleo</Label>
                                 <Input id="subnucleo" value={formData.subnucleo} disabled className="bg-gray-100" />
                             </div>
                         </div>
 
                         <div className="border-t pt-4">
-                            <h3 className="text-sm font-medium text-gray-900 mb-4">Dados Editáveis</h3>
+                            <h3 className="text-sm font-medium text-gray-900 mb-4">Dados Complementares</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="estado_civil">Estado Civil</Label>
+                                    <select
+                                        id="estado_civil"
+                                        value={formData.estado_civil}
+                                        onChange={e => setFormData({ ...formData, estado_civil: e.target.value })}
+                                        className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        <option value="Solteiro(a)">Solteiro(a)</option>
+                                        <option value="Casado(a)">Casado(a)</option>
+                                        <option value="Divorciado(a)">Divorciado(a)</option>
+                                        <option value="Viúvo(a)">Viúvo(a)</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="escolaridade">Escolaridade</Label>
+                                    <Input
+                                        id="escolaridade"
+                                        value={formData.escolaridade}
+                                        onChange={e => setFormData({ ...formData, escolaridade: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="profissao">Profissão</Label>
+                                    <Input
+                                        id="profissao"
+                                        value={formData.profissao}
+                                        onChange={e => setFormData({ ...formData, profissao: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="naturalidade">Naturalidade (Cidade/UF)</Label>
+                                    <Input value={`${formData.naturalidade} - ${formData.uf_nascimento}`} disabled className="bg-gray-100" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-t pt-4">
+                            <h3 className="text-sm font-medium text-gray-900 mb-4">Dados Eclesiásticos</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="cargo">Cargo na Igreja</Label>
+                                    <Input
+                                        id="cargo"
+                                        value={formData.cargo_igreja}
+                                        onChange={e => setFormData({ ...formData, cargo_igreja: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="congregacao">Congregação</Label>
+                                    <Input
+                                        id="congregacao"
+                                        value={formData.congregacao}
+                                        onChange={e => setFormData({ ...formData, congregacao: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-t pt-4">
+                            <h3 className="text-sm font-medium text-gray-900 mb-4">Origem Acadêmica</h3>
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        id="ja_estudou"
+                                        checked={formData.ja_estudou_teologia}
+                                        onChange={e => setFormData({ ...formData, ja_estudou_teologia: e.target.checked })}
+                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    />
+                                    <Label htmlFor="ja_estudou">Já estudou Teologia anteriormente?</Label>
+                                </div>
+                                {formData.ja_estudou_teologia && (
+                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <Label htmlFor="instituicao">Instituição que Estudou</Label>
+                                        <Input
+                                            id="instituicao"
+                                            value={formData.instituicao_teologia}
+                                            onChange={e => setFormData({ ...formData, instituicao_teologia: e.target.value })}
+                                            placeholder="Nome da instituição ou seminário"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="border-t pt-4">
+                            <h3 className="text-sm font-medium text-gray-900 mb-4">Contato e Endereço</h3>
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="telefone">Telefone / WhatsApp</Label>
@@ -281,13 +439,41 @@ export default function StudentProfilePage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="endereco">Endereço Completo</Label>
+                                    <Label htmlFor="endereco">Logradouro (Rua, Número, Bairro)</Label>
                                     <Input
                                         id="endereco"
                                         value={formData.endereco}
                                         onChange={e => setFormData({ ...formData, endereco: e.target.value })}
-                                        placeholder="Rua, Número, Bairro, Cidade - UF, CEP"
+                                        placeholder="Rua, Número, Bairro"
                                     />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="cidade">Cidade</Label>
+                                        <Input
+                                            id="cidade"
+                                            value={formData.cidade}
+                                            onChange={e => setFormData({ ...formData, cidade: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="uf">UF</Label>
+                                        <Input
+                                            id="uf"
+                                            value={formData.uf}
+                                            onChange={e => setFormData({ ...formData, uf: e.target.value })}
+                                            maxLength={2}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="cep">CEP</Label>
+                                        <Input
+                                            id="cep"
+                                            value={formData.cep}
+                                            onChange={e => setFormData({ ...formData, cep: e.target.value })}
+                                            placeholder="00000-000"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>

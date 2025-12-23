@@ -11,7 +11,20 @@ export const matriculaSchema = z.object({
   data_nascimento: z.string().min(1, 'Data de nascimento obrigatória'),
   endereco: z.string().min(5, 'Endereço inválido'),
   subnucleo_id: z.string().uuid('Subnúcleo inválido'),
-  nivel_id: z.string().uuid('Nível inválido')
+  nivel_id: z.string().uuid('Nível inválido'),
+  rg: z.string().min(5, 'RG obrigatório'),
+  estado_civil: z.string().min(1, 'Estado civil obrigatório'),
+  naturalidade: z.string().min(2, 'Cidade de nascimento obrigatória'),
+  uf_nascimento: z.string().length(2, 'UF inválida'),
+  escolaridade: z.string().min(1, 'Escolaridade obrigatória'),
+  profissao: z.string().min(2, 'Profissão obrigatória'),
+  cargo_igreja: z.string().min(2, 'Cargo na igreja obrigatório'),
+  congregacao: z.string().min(2, 'Congregação obrigatória'),
+  ja_estudou_teologia: z.boolean().default(false),
+  instituicao_teologia: z.string().optional(),
+  cidade: z.string().min(2, 'Cidade obrigatória'),
+  uf: z.string().length(2, 'UF inválida'),
+  cep: z.string().min(8, 'CEP inválido')
 })
 
 export type MatriculaFormData = z.infer<typeof matriculaSchema>

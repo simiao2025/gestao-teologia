@@ -17,6 +17,7 @@ export default function PedidosPage() {
     const [loading, setLoading] = useState(true)
     const [pedidos, setPedidos] = useState<any[]>([])
     const [statusFilter, setStatusFilter] = useState('all')
+    const [searchTerm, setSearchTerm] = useState('')
 
     // Feedback State
     const [feedback, setFeedback] = useState<{

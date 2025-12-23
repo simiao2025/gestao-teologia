@@ -23,6 +23,7 @@ function DashboardContent() {
     })
     const [studentId, setStudentId] = useState<string | null>(null)
     const [studentName, setStudentName] = useState('')
+    const [showMaterialWarning, setShowMaterialWarning] = useState(false)
 
     useEffect(() => {
         loadDashboardData()
@@ -67,6 +68,38 @@ function DashboardContent() {
                     .eq('status', 'pendente')
 
                 const pendenciasFinanceiras = pedidos?.length || 0
+
+                // 3. Check if should show material warning
+                // Get student's current level
+                const { data: aluno } = await supabase
+                    .from('alunos')
+                    .select('nivel_atual_id')
+                    .eq('id', usuario.id)
+                    .maybeSingle()
+
+                if (aluno?.nivel_atual_id) {
+                    // Get proximo_pedido discipline for this level
+                    const { data: proximaDisciplina } = await supabase
+                        .from('disciplinas')
+                        .select('id')
+                        .eq('nivel_id', aluno.nivel_atual_id)
+                        .eq('status_acad', 'proximo_pedido')
+                        .maybeSingle()
+
+                    if (proximaDisciplina) {
+                        // Check if there's a PAID order for this discipline
+                        const { data: pedidoPago } = await supabase
+                            .from('pedidos')
+                            .select('id')
+                            .eq('aluno_id', usuario.id)
+                            .eq('disciplina_id', proximaDisciplina.id)
+                            .eq('status', 'pago')
+                            .maybeSingle()
+
+                        // Show warning only if there's NO paid order
+                        setShowMaterialWarning(!pedidoPago)
+                    }
+                }
 
                 setStats({
                     cursando,
@@ -117,16 +150,18 @@ function DashboardContent() {
                         </AlertDescription>
                     </Alert>
 
-                    <Alert className="bg-blue-50 border-blue-200">
-                        <ShoppingCart className="h-4 w-4 text-blue-600" />
-                        <AlertTitle className="text-blue-800 font-bold">Seu Material Didático</AlertTitle>
-                        <AlertDescription className="text-blue-700">
-                            Não esqueça de solicitar seu material didático na seção
-                            <Link href="/aluno/financeiro" className="font-bold underline ml-1">
-                                Financeiro
-                            </Link> para iniciar seus estudos.
-                        </AlertDescription>
-                    </Alert>
+                    {showMaterialWarning && (
+                        <Alert className="bg-blue-50 border-blue-200">
+                            <ShoppingCart className="h-4 w-4 text-blue-600" />
+                            <AlertTitle className="text-blue-800 font-bold">Seu Material Didático</AlertTitle>
+                            <AlertDescription className="text-blue-700">
+                                Não esqueça de solicitar seu material didático na seção
+                                <Link href="/aluno/financeiro" className="font-bold underline ml-1">
+                                    Financeiro
+                                </Link> para iniciar seus estudos.
+                            </AlertDescription>
+                        </Alert>
+                    )}
                 </div>
             )}
 

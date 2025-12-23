@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Layout from '@/components/layout'
 import { supabase, ConfigSistema, Disciplina, Usuario, Subnucleo, EscalaMonitor } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/components/theme-provider'
@@ -46,7 +47,7 @@ import {
 } from 'lucide-react'
 
 export default function ConfigSettingsPage() {
-    const { user } = useAuth()
+    const { user, handleLogout } = useAuth()
     const { setTheme } = useTheme()
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -443,405 +444,407 @@ export default function ConfigSettingsPage() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6">
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <Button variant="outline" size="sm" asChild className="rounded-full flex items-center gap-1">
-                        <Link href="/dashboard">
-                            <ChevronLeft className="h-4 w-4" /> Voltar
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Configurações do Sistema</h1>
-                        <p className="text-gray-500 font-medium">Gerencie diretrizes acadêmicas, permissões e identidade visual.</p>
+        <Layout user={user} onLogout={handleLogout}>
+            <div className="max-w-6xl mx-auto space-y-6">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" size="sm" asChild className="rounded-full flex items-center gap-1">
+                            <Link href="/dashboard">
+                                <ChevronLeft className="h-4 w-4" /> Voltar
+                            </Link>
+                        </Button>
+                        <div>
+                            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Configurações do Sistema</h1>
+                            <p className="text-gray-500 font-medium">Gerencie diretrizes acadêmicas, permissões e identidade visual.</p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <FeedbackDialog
-                isOpen={feedback.isOpen}
-                onClose={() => setFeedback(prev => ({ ...prev, isOpen: false }))}
-                title={feedback.title}
-                message={feedback.message}
-                type={feedback.type}
-            />
+                <FeedbackDialog
+                    isOpen={feedback.isOpen}
+                    onClose={() => setFeedback(prev => ({ ...prev, isOpen: false }))}
+                    title={feedback.title}
+                    message={feedback.message}
+                    type={feedback.type}
+                />
 
-            <Tabs defaultValue={user?.tipo === 'monitor' ? 'perfil' : 'academico'} className="w-full">
-                <TabsList className={cn(
-                    "grid mb-8 gap-1",
-                    user?.tipo === 'monitor' ? "grid-cols-1 md:w-1/4" : "grid-cols-2 md:grid-cols-6"
-                )}>
-                    {user?.tipo !== 'monitor' && (
-                        <>
-                            <TabsTrigger value="academico"><BookOpen className="h-4 w-4 mr-2" /> Ciclo</TabsTrigger>
-                            <TabsTrigger value="escalas"><CalendarDays className="h-4 w-4 mr-2" /> Escalas</TabsTrigger>
-                            <TabsTrigger value="usuarios"><Users className="h-4 w-4 mr-2" /> Usuários</TabsTrigger>
-                            <TabsTrigger value="aparencia"><Palette className="h-4 w-4 mr-2" /> Visual</TabsTrigger>
-                            <TabsTrigger value="ferramentas"><Download className="h-4 w-4 mr-2" /> Dados</TabsTrigger>
-                        </>
-                    )}
-                    <TabsTrigger value="perfil"><Shield className="h-4 w-4 mr-2" /> Perfil</TabsTrigger>
-                </TabsList>
+                <Tabs defaultValue={user?.tipo === 'monitor' ? 'perfil' : 'academico'} className="w-full">
+                    <TabsList className={cn(
+                        "grid mb-8 gap-1",
+                        user?.tipo === 'monitor' ? "grid-cols-1 md:w-1/4" : "grid-cols-2 md:grid-cols-6"
+                    )}>
+                        {user?.tipo !== 'monitor' && (
+                            <>
+                                <TabsTrigger value="academico"><BookOpen className="h-4 w-4 mr-2" /> Ciclo</TabsTrigger>
+                                <TabsTrigger value="escalas"><CalendarDays className="h-4 w-4 mr-2" /> Escalas</TabsTrigger>
+                                <TabsTrigger value="usuarios"><Users className="h-4 w-4 mr-2" /> Usuários</TabsTrigger>
+                                <TabsTrigger value="aparencia"><Palette className="h-4 w-4 mr-2" /> Visual</TabsTrigger>
+                                <TabsTrigger value="ferramentas"><Download className="h-4 w-4 mr-2" /> Dados</TabsTrigger>
+                            </>
+                        )}
+                        <TabsTrigger value="perfil"><Shield className="h-4 w-4 mr-2" /> Perfil</TabsTrigger>
+                    </TabsList>
 
-                {/* --- Aba Ciclo Acadêmico --- */}
-                <TabsContent value="academico">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle>Gestão de Disciplinas & Prazos</CardTitle>
-                                <CardDescription>Configure o status e prazos para cada nível do curso.</CardDescription>
-                            </div>
-                            <Button
-                                onClick={handleSaveAcademicCycle}
-                                disabled={academicSaving}
-                                className="bg-blue-600 hover:bg-blue-700"
-                            >
-                                {academicSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                                Salvar Alterações
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            {niveis.length > 0 ? niveis.map((nv) => (
-                                <div key={nv.id} className="mb-10 last:mb-0">
-                                    <h3 className="text-lg font-bold mb-4 text-blue-700 flex items-center">Nível {nv.nome}</h3>
-                                    <div className="border border-border rounded-xl overflow-hidden">
+                    {/* --- Aba Ciclo Acadêmico --- */}
+                    <TabsContent value="academico">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle>Gestão de Disciplinas & Prazos</CardTitle>
+                                    <CardDescription>Configure o status e prazos para cada nível do curso.</CardDescription>
+                                </div>
+                                <Button
+                                    onClick={handleSaveAcademicCycle}
+                                    disabled={academicSaving}
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                    {academicSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                                    Salvar Alterações
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                {niveis.length > 0 ? niveis.map((nv) => (
+                                    <div key={nv.id} className="mb-10 last:mb-0">
+                                        <h3 className="text-lg font-bold mb-4 text-blue-700 flex items-center">Nível {nv.nome}</h3>
+                                        <div className="border border-border rounded-xl overflow-hidden">
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-muted/50 border-b border-border">
+                                                    <tr>
+                                                        <th className="px-5 py-4 font-semibold text-foreground">Disciplina</th>
+                                                        <th className="px-5 py-4 font-semibold text-foreground">Status Acadêmico</th>
+                                                        <th className="px-5 py-4 font-semibold text-foreground">Data/Prazo</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-border">
+                                                    {disciplinasLocal.filter(d => d.nivel_id === nv.id).map((disc) => (
+                                                        <tr key={disc.id} className="hover:bg-accent/30 transition-colors">
+                                                            <td className="px-5 py-4">
+                                                                <div className="font-bold text-foreground">{disc.nome}</div>
+                                                                <div className="text-xs text-muted-foreground mt-0.5">{disc.codigo}</div>
+                                                            </td>
+                                                            <td className="px-5 py-4">
+                                                                <Select
+                                                                    value={disc.status_acad}
+                                                                    onValueChange={(val: any) => handleUpdateDisciplinaLocal(disc.id, { status_acad: val })}
+                                                                >
+                                                                    <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="pendente">Pendente</SelectItem>
+                                                                        <SelectItem value="proximo_pedido">Próximo Pedido</SelectItem>                                                                    <SelectItem value="ja_pedido">Já Pedido</SelectItem>
+                                                                        <SelectItem value="finalizado">Finalizado</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </td>
+                                                            <td className="px-5 py-4">
+                                                                {disc.status_acad === 'proximo_pedido' ? (
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <span className="text-[10px] text-gray-400 uppercase font-bold">Prazo de Pedido</span>
+                                                                        <Input
+                                                                            type="text"
+                                                                            placeholder="DD/MM/AAAA"
+                                                                            className="h-8 w-[140px] text-xs"
+                                                                            value={(disc as any).data_limite_pedido_raw || ''}
+                                                                            onChange={(e) => handleUpdateDisciplinaLocal(disc.id, { data_limite_pedido_raw: maskDate(e.target.value) } as any)}
+                                                                        />
+                                                                    </div>
+                                                                ) : disc.status_acad === 'finalizado' ? (
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <span className="text-[10px] text-blue-500 uppercase font-bold">Encerrado em</span>
+                                                                        <Input
+                                                                            type="text"
+                                                                            placeholder="DD/MM/AAAA"
+                                                                            className="h-8 w-[140px] text-xs"
+                                                                            value={(disc as any).data_encerramento_raw || ''}
+                                                                            onChange={(e) => handleUpdateDisciplinaLocal(disc.id, { data_encerramento_raw: maskDate(e.target.value) } as any)}
+                                                                        />
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-gray-400 italic">N/A</span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="text-center py-10 text-gray-500">Nenhum nível acadêmico encontrado.</div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* --- Aba Escalas --- */}
+                    <TabsContent value="escalas">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <Card className="lg:col-span-1">
+                                <CardHeader>
+                                    <CardTitle>Nova Escala</CardTitle>
+                                    <CardDescription>Vincular monitor a um polo e disciplina.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>Monitor</Label>
+                                        <Select value={novaEscala.monitor_id} onValueChange={(v) => setNovaEscala({ ...novaEscala, monitor_id: v })}>
+                                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                            <SelectContent>
+                                                {usuariosAdmin.filter(u => u.tipo === 'monitor').map(m => (
+                                                    <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Polo (Subnúcleo)</Label>
+                                        <Select value={novaEscala.subnucleo_id} onValueChange={(v) => setNovaEscala({ ...novaEscala, subnucleo_id: v })}>
+                                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                            <SelectContent>
+                                                {subnucleos.map(s => (
+                                                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Disciplina</Label>
+                                        <Select value={novaEscala.disciplina_id} onValueChange={(v) => setNovaEscala({ ...novaEscala, disciplina_id: v })}>
+                                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                            <SelectContent>
+                                                {disciplinas.map(d => (
+                                                    <SelectItem key={d.id} value={d.id}>{d.nome} ({d.codigo})</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Button onClick={handleSaveEscala} disabled={escalaSaving} className="w-full bg-blue-600 hover:bg-blue-700">
+                                        {escalaSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+                                        Criar Escala
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="lg:col-span-2">
+                                <CardHeader>
+                                    <CardTitle>Escalas Ativas</CardTitle>
+                                    <CardDescription>Monitores escalados por polo e disciplina.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="border rounded-xl overflow-hidden">
                                         <table className="w-full text-sm text-left">
-                                            <thead className="bg-muted/50 border-b border-border">
+                                            <thead className="bg-muted/50 border-b">
                                                 <tr>
-                                                    <th className="px-5 py-4 font-semibold text-foreground">Disciplina</th>
-                                                    <th className="px-5 py-4 font-semibold text-foreground">Status Acadêmico</th>
-                                                    <th className="px-5 py-4 font-semibold text-foreground">Data/Prazo</th>
+                                                    <th className="px-4 py-3 font-semibold">Monitor</th>
+                                                    <th className="px-4 py-3 font-semibold">Polo</th>
+                                                    <th className="px-4 py-3 font-semibold">Disciplina</th>
+                                                    <th className="px-4 py-3 font-semibold w-10"></th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-border">
-                                                {disciplinasLocal.filter(d => d.nivel_id === nv.id).map((disc) => (
-                                                    <tr key={disc.id} className="hover:bg-accent/30 transition-colors">
-                                                        <td className="px-5 py-4">
-                                                            <div className="font-bold text-foreground">{disc.nome}</div>
-                                                            <div className="text-xs text-muted-foreground mt-0.5">{disc.codigo}</div>
-                                                        </td>
-                                                        <td className="px-5 py-4">
-                                                            <Select
-                                                                value={disc.status_acad}
-                                                                onValueChange={(val: any) => handleUpdateDisciplinaLocal(disc.id, { status_acad: val })}
-                                                            >
-                                                                <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="pendente">Pendente</SelectItem>
-                                                                    <SelectItem value="proximo_pedido">Próximo Pedido</SelectItem>                                                                    <SelectItem value="ja_pedido">Já Pedido</SelectItem>
-                                                                    <SelectItem value="finalizado">Finalizado</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </td>
-                                                        <td className="px-5 py-4">
-                                                            {disc.status_acad === 'proximo_pedido' ? (
-                                                                <div className="flex flex-col gap-1">
-                                                                    <span className="text-[10px] text-gray-400 uppercase font-bold">Prazo de Pedido</span>
-                                                                    <Input
-                                                                        type="text"
-                                                                        placeholder="DD/MM/AAAA"
-                                                                        className="h-8 w-[140px] text-xs"
-                                                                        value={(disc as any).data_limite_pedido_raw || ''}
-                                                                        onChange={(e) => handleUpdateDisciplinaLocal(disc.id, { data_limite_pedido_raw: maskDate(e.target.value) } as any)}
-                                                                    />
-                                                                </div>
-                                                            ) : disc.status_acad === 'finalizado' ? (
-                                                                <div className="flex flex-col gap-1">
-                                                                    <span className="text-[10px] text-blue-500 uppercase font-bold">Encerrado em</span>
-                                                                    <Input
-                                                                        type="text"
-                                                                        placeholder="DD/MM/AAAA"
-                                                                        className="h-8 w-[140px] text-xs"
-                                                                        value={(disc as any).data_encerramento_raw || ''}
-                                                                        onChange={(e) => handleUpdateDisciplinaLocal(disc.id, { data_encerramento_raw: maskDate(e.target.value) } as any)}
-                                                                    />
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-gray-400 italic">N/A</span>
-                                                            )}
+                                            <tbody className="divide-y text-gray-600">
+                                                {escalas.map((esc) => (
+                                                    <tr key={esc.id} className="hover:bg-muted/30">
+                                                        <td className="px-4 py-3 font-medium text-foreground">{esc.monitor?.nome}</td>
+                                                        <td className="px-4 py-3">{esc.subnucleo?.nome}</td>
+                                                        <td className="px-4 py-3">{esc.disciplina?.nome}</td>
+                                                        <td className="px-4 py-3">
+                                                            <Button variant="ghost" size="icon" className="text-red-500" onClick={() => handleDeleteEscala(esc.id)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
                                                         </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
                                     </div>
-                                </div>
-                            )) : (
-                                <div className="text-center py-10 text-gray-500">Nenhum nível acadêmico encontrado.</div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </TabsContent>
 
-                {/* --- Aba Escalas --- */}
-                <TabsContent value="escalas">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <Card className="lg:col-span-1">
-                            <CardHeader>
-                                <CardTitle>Nova Escala</CardTitle>
-                                <CardDescription>Vincular monitor a um polo e disciplina.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Monitor</Label>
-                                    <Select value={novaEscala.monitor_id} onValueChange={(v) => setNovaEscala({ ...novaEscala, monitor_id: v })}>
-                                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                        <SelectContent>
-                                            {usuariosAdmin.filter(u => u.tipo === 'monitor').map(m => (
-                                                <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                    {/* --- Aba Usuários --- */}
+                    <TabsContent value="usuarios">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle>Gestão de Usuários</CardTitle>
+                                    <CardDescription>Gerencie o acesso de administradores, monitores e alunos.</CardDescription>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Polo (Subnúcleo)</Label>
-                                    <Select value={novaEscala.subnucleo_id} onValueChange={(v) => setNovaEscala({ ...novaEscala, subnucleo_id: v })}>
-                                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                        <SelectContent>
-                                            {subnucleos.map(s => (
-                                                <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Disciplina</Label>
-                                    <Select value={novaEscala.disciplina_id} onValueChange={(v) => setNovaEscala({ ...novaEscala, disciplina_id: v })}>
-                                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                        <SelectContent>
-                                            {disciplinas.map(d => (
-                                                <SelectItem key={d.id} value={d.id}>{d.nome} ({d.codigo})</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <Button onClick={handleSaveEscala} disabled={escalaSaving} className="w-full bg-blue-600 hover:bg-blue-700">
-                                    {escalaSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-                                    Criar Escala
+                                <Button size="sm" onClick={() => {
+                                    setIsEditing(false)
+                                    setNewUser({ nome: '', email: '', senha: '', tipo: 'monitor' })
+                                    setIsUserModalOpen(true)
+                                }}>
+                                    <UserPlus className="h-4 w-4 mr-2" /> Novo Usuário
                                 </Button>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="lg:col-span-2">
-                            <CardHeader>
-                                <CardTitle>Escalas Ativas</CardTitle>
-                                <CardDescription>Monitores escalados por polo e disciplina.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="border rounded-xl overflow-hidden">
-                                    <table className="w-full text-sm text-left">
-                                        <thead className="bg-muted/50 border-b">
-                                            <tr>
-                                                <th className="px-4 py-3 font-semibold">Monitor</th>
-                                                <th className="px-4 py-3 font-semibold">Polo</th>
-                                                <th className="px-4 py-3 font-semibold">Disciplina</th>
-                                                <th className="px-4 py-3 font-semibold w-10"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y text-gray-600">
-                                            {escalas.map((esc) => (
-                                                <tr key={esc.id} className="hover:bg-muted/30">
-                                                    <td className="px-4 py-3 font-medium text-foreground">{esc.monitor?.nome}</td>
-                                                    <td className="px-4 py-3">{esc.subnucleo?.nome}</td>
-                                                    <td className="px-4 py-3">{esc.disciplina?.nome}</td>
-                                                    <td className="px-4 py-3">
-                                                        <Button variant="ghost" size="icon" className="text-red-500" onClick={() => handleDeleteEscala(esc.id)}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                <div className="grid gap-4">
+                                    {usuariosAdmin.map((u) => (
+                                        <div key={u.id} className="flex items-center justify-between p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
+                                                    {u.nome.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold">{u.nome}</div>
+                                                    <div className="text-sm text-gray-500">{u.email}</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Badge variant="outline" className="capitalize">{u.tipo}</Badge>
+                                                <Button variant="ghost" size="icon" className="text-blue-500" onClick={() => handleEditClick(u)}>
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="text-red-500" onClick={() => handleDeleteUser(u.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </CardContent>
                         </Card>
-                    </div>
-                </TabsContent>
+                    </TabsContent>
 
-                {/* --- Aba Usuários --- */}
-                <TabsContent value="usuarios">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle>Gestão de Usuários</CardTitle>
-                                <CardDescription>Gerencie o acesso de administradores, monitores e alunos.</CardDescription>
-                            </div>
-                            <Button size="sm" onClick={() => {
-                                setIsEditing(false)
-                                setNewUser({ nome: '', email: '', senha: '', tipo: 'monitor' })
-                                setIsUserModalOpen(true)
-                            }}>
-                                <UserPlus className="h-4 w-4 mr-2" /> Novo Usuário
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid gap-4">
-                                {usuariosAdmin.map((u) => (
-                                    <div key={u.id} className="flex items-center justify-between p-4 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
-                                                {u.nome.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <div className="font-bold">{u.nome}</div>
-                                                <div className="text-sm text-gray-500">{u.email}</div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <Badge variant="outline" className="capitalize">{u.tipo}</Badge>
-                                            <Button variant="ghost" size="icon" className="text-blue-500" onClick={() => handleEditClick(u)}>
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="text-red-500" onClick={() => handleDeleteUser(u.id)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* --- Aba Aparência --- */}
-                <TabsContent value="aparencia">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Personalização</CardTitle>
-                            <CardDescription>Adapte o visual do sistema para sua instituição.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-4">
-                                    <Label>Nome da Instituição</Label>
-                                    <Input
-                                        value={config?.nome_instituicao || ''}
-                                        onChange={(e) => setConfig(prev => prev ? ({ ...prev, nome_instituicao: e.target.value }) : null)}
-                                    />
-                                </div>
-                                <div className="space-y-4">
-                                    <Label>Tema Padrão</Label>
-                                    <div className="flex gap-4">
-                                        <div onClick={() => { setConfig(prev => prev ? ({ ...prev, tema: 'light' }) : null); setTheme('light') }} className={cn("flex-1 p-4 border rounded-xl flex flex-col items-center gap-2 cursor-pointer transition-all", config?.tema === 'light' || !config?.tema ? "border-blue-500 bg-blue-50/50" : "hover:border-gray-400 opacity-60")}>
-                                            <div className="w-full h-12 bg-white border rounded shadow-sm"></div>
-                                            <span className="text-xs font-bold">Light Mode</span>
-                                        </div>
-                                        <div onClick={() => { setConfig(prev => prev ? ({ ...prev, tema: 'dark' }) : null); setTheme('dark') }} className={cn("flex-1 p-4 border rounded-xl flex flex-col items-center gap-2 cursor-pointer transition-all", config?.tema === 'dark' ? "border-blue-500 bg-blue-50/50" : "hover:border-gray-400 opacity-60")}>
-                                            <div className="w-full h-12 bg-gray-900 border rounded shadow-sm"></div>
-                                            <span className="text-xs font-bold">Dark Mode</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex justify-end">
-                                <Button onClick={() => handleSaveConfig()} disabled={saving} className="px-8">
-                                    {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Salvar Alterações
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* --- Aba Perfil (Segurança) --- */}
-                <TabsContent value="perfil">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Meus Dados & Segurança</CardTitle>
-                            <CardDescription>Gerencie suas credenciais de acesso.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="max-w-xl">
-                            <form onSubmit={handleChangePassword} className="space-y-6">
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label>Seu Nome</Label>
-                                            <Input value={user?.user_metadata?.nome || ''} disabled className="bg-muted" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Seu E-mail</Label>
-                                            <Input value={user?.email || ''} disabled className="bg-muted" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="pt-6 border-t space-y-4">
-                                    <h4 className="font-bold flex items-center text-red-600"><Shield className="h-4 w-4 mr-2" /> Alterar Senha</h4>
+                    {/* --- Aba Aparência --- */}
+                    <TabsContent value="aparencia">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Personalização</CardTitle>
+                                <CardDescription>Adapte o visual do sistema para sua instituição.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label>Nova Senha</Label>
-                                            <Input type="password" placeholder="Mínimo 6 caracteres" value={passwords.new} onChange={(e) => setPasswords({ ...passwords, new: e.target.value })} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Confirmar Nova Senha</Label>
-                                            <Input type="password" value={passwords.confirm} onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })} />
+                                        <Label>Nome da Instituição</Label>
+                                        <Input
+                                            value={config?.nome_instituicao || ''}
+                                            onChange={(e) => setConfig(prev => prev ? ({ ...prev, nome_instituicao: e.target.value }) : null)}
+                                        />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <Label>Tema Padrão</Label>
+                                        <div className="flex gap-4">
+                                            <div onClick={() => { setConfig(prev => prev ? ({ ...prev, tema: 'light' }) : null); setTheme('light') }} className={cn("flex-1 p-4 border rounded-xl flex flex-col items-center gap-2 cursor-pointer transition-all", config?.tema === 'light' || !config?.tema ? "border-blue-500 bg-blue-50/50" : "hover:border-gray-400 opacity-60")}>
+                                                <div className="w-full h-12 bg-white border rounded shadow-sm"></div>
+                                                <span className="text-xs font-bold">Light Mode</span>
+                                            </div>
+                                            <div onClick={() => { setConfig(prev => prev ? ({ ...prev, tema: 'dark' }) : null); setTheme('dark') }} className={cn("flex-1 p-4 border rounded-xl flex flex-col items-center gap-2 cursor-pointer transition-all", config?.tema === 'dark' ? "border-blue-500 bg-blue-50/50" : "hover:border-gray-400 opacity-60")}>
+                                                <div className="w-full h-12 bg-gray-900 border rounded shadow-sm"></div>
+                                                <span className="text-xs font-bold">Dark Mode</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <Button type="submit" variant="destructive" disabled={passSaving} className="w-full">
-                                        {passSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Atualizar Senha
+                                </div>
+                                <div className="flex justify-end">
+                                    <Button onClick={() => handleSaveConfig()} disabled={saving} className="px-8">
+                                        {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Salvar Alterações
                                     </Button>
                                 </div>
-                            </form>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
 
-                <TabsContent value="ferramentas">
-                    <Card>
-                        <CardHeader><CardTitle>Exportação de Dados</CardTitle></CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Button variant="outline" className="h-16 justify-start px-6" onClick={() => exportData('alunos')}>
-                                <Users className="h-5 w-5 mr-4 text-blue-500" /> Exportar Alunos (Excel/CSV)
-                            </Button>
-                            <Button variant="outline" className="h-16 justify-start px-6" onClick={() => exportData('pedidos')}>
-                                <ShoppingCart className="h-5 w-5 mr-4 text-green-500" /> Exportar Pedidos (Excel/CSV)
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
+                    {/* --- Aba Perfil (Segurança) --- */}
+                    <TabsContent value="perfil">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Meus Dados & Segurança</CardTitle>
+                                <CardDescription>Gerencie suas credenciais de acesso.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="max-w-xl">
+                                <form onSubmit={handleChangePassword} className="space-y-6">
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label>Seu Nome</Label>
+                                                <Input value={user?.user_metadata?.nome || ''} disabled className="bg-muted" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Seu E-mail</Label>
+                                                <Input value={user?.email || ''} disabled className="bg-muted" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="pt-6 border-t space-y-4">
+                                        <h4 className="font-bold flex items-center text-red-600"><Shield className="h-4 w-4 mr-2" /> Alterar Senha</h4>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label>Nova Senha</Label>
+                                                <Input type="password" placeholder="Mínimo 6 caracteres" value={passwords.new} onChange={(e) => setPasswords({ ...passwords, new: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Confirmar Nova Senha</Label>
+                                                <Input type="password" value={passwords.confirm} onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })} />
+                                            </div>
+                                        </div>
+                                        <Button type="submit" variant="destructive" disabled={passSaving} className="w-full">
+                                            {passSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Atualizar Senha
+                                        </Button>
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
 
-            {/* Modal Novo/Editar Usuário */}
-            <Dialog open={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>{isEditing ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
-                        <DialogDescription>Preencha os dados do {isEditing ? 'usuário' : 'novo membro'}.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label>Nome Completo</Label>
-                            <Input value={newUser.nome} onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })} />
+                    <TabsContent value="ferramentas">
+                        <Card>
+                            <CardHeader><CardTitle>Exportação de Dados</CardTitle></CardHeader>
+                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Button variant="outline" className="h-16 justify-start px-6" onClick={() => exportData('alunos')}>
+                                    <Users className="h-5 w-5 mr-4 text-blue-500" /> Exportar Alunos (Excel/CSV)
+                                </Button>
+                                <Button variant="outline" className="h-16 justify-start px-6" onClick={() => exportData('pedidos')}>
+                                    <ShoppingCart className="h-5 w-5 mr-4 text-green-500" /> Exportar Pedidos (Excel/CSV)
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+
+                {/* Modal Novo/Editar Usuário */}
+                <Dialog open={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>{isEditing ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
+                            <DialogDescription>Preencha os dados do {isEditing ? 'usuário' : 'novo membro'}.</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Nome Completo</Label>
+                                <Input value={newUser.nome} onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>E-mail</Label>
+                                <Input type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} disabled={isEditing} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Senha {isEditing && '(Opcional)'}</Label>
+                                <Input type="password" value={newUser.senha} onChange={(e) => setNewUser({ ...newUser, senha: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Cargo / Permissão</Label>
+                                <Select value={newUser.tipo} onValueChange={(val: any) => setNewUser({ ...newUser, tipo: val })}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="aluno">Aluno</SelectItem>
+                                        <SelectItem value="monitor">Monitor</SelectItem>
+                                        <SelectItem value="diretoria">Diretoria</SelectItem>
+                                        <SelectItem value="admin">Administrador</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label>E-mail</Label>
-                            <Input type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} disabled={isEditing} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Senha {isEditing && '(Opcional)'}</Label>
-                            <Input type="password" value={newUser.senha} onChange={(e) => setNewUser({ ...newUser, senha: e.target.value })} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Cargo / Permissão</Label>
-                            <Select value={newUser.tipo} onValueChange={(val: any) => setNewUser({ ...newUser, tipo: val })}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="aluno">Aluno</SelectItem>
-                                    <SelectItem value="monitor">Monitor</SelectItem>
-                                    <SelectItem value="diretoria">Diretoria</SelectItem>
-                                    <SelectItem value="admin">Administrador</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsUserModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleSaveUser} disabled={saving}>
-                            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                            {isEditing ? 'Salvar Alterações' : 'Criar Usuário'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsUserModalOpen(false)}>Cancelar</Button>
+                            <Button onClick={handleSaveUser} disabled={saving}>
+                                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                {isEditing ? 'Salvar Alterações' : 'Criar Usuário'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+        </Layout>
     )
 }

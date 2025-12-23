@@ -18,9 +18,11 @@ import {
   Eye,
   Users,
   Filter,
-  ChevronLeft
+  ChevronLeft,
+  ArrowRightLeft
 } from 'lucide-react'
 import { FeedbackDialog, FeedbackType } from '@/components/ui/feedback-dialog'
+import { TransferAlunoDialog } from '@/components/transfer-aluno-dialog'
 
 interface AlunoWithDetails {
   id: string
@@ -58,6 +60,14 @@ export default function AlunosPage() {
     title: '',
     message: '',
     type: 'info'
+  })
+
+  // Transfer Dialog State
+  const [transferDialog, setTransferDialog] = useState({
+    isOpen: false,
+    alunoId: '',
+    alunoNome: '',
+    subnucleoId: ''
   })
 
   const showFeedback = (title: string, message: string, type: FeedbackType = 'info') => {
@@ -182,6 +192,20 @@ export default function AlunosPage() {
       console.error('Erro interno ao excluir aluno:', error)
       showFeedback('Erro', `Erro interno: ${error.message || 'Desconhecido'}`, 'error')
     }
+  }
+
+  const openTransferDialog = (aluno: AlunoWithDetails) => {
+    setTransferDialog({
+      isOpen: true,
+      alunoId: aluno.id,
+      alunoNome: aluno.nome,
+      subnucleoId: aluno.subnucleo_id
+    })
+  }
+
+  const handleTransferSuccess = () => {
+    showFeedback('Sucesso', 'Aluno transferido com sucesso!', 'success')
+    loadAlunos()
   }
 
   if (isLoading) {
@@ -389,11 +413,23 @@ export default function AlunosPage() {
                         </td>
                         <td className="p-3">
                           <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <Eye className="h-4 w-4" />
+                            <Button size="sm" variant="outline" asChild>
+                              <Link href={`/dashboard/alunos/${aluno.id}`}>
+                                <Eye className="h-4 w-4" />
+                              </Link>
                             </Button>
-                            <Button size="sm" variant="outline">
-                              <Edit className="h-4 w-4" />
+                            <Button size="sm" variant="outline" asChild>
+                              <Link href={`/dashboard/alunos/${aluno.id}/editar`}>
+                                <Edit className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              title="Transferir de Subnúcleo"
+                              onClick={() => openTransferDialog(aluno)}
+                            >
+                              <ArrowRightLeft className="h-4 w-4 text-blue-600" />
                             </Button>
                             <Button
                               size="sm"
@@ -423,6 +459,14 @@ export default function AlunosPage() {
           </CardContent>
         </Card>
       </div>
+      <TransferAlunoDialog
+        isOpen={transferDialog.isOpen}
+        onClose={() => setTransferDialog(prev => ({ ...prev, isOpen: false }))}
+        alunoId={transferDialog.alunoId}
+        alunoNome={transferDialog.alunoNome}
+        currentSubnucleoId={transferDialog.subnucleoId}
+        onSuccess={handleTransferSuccess}
+      />
     </Layout>
   )
 }
