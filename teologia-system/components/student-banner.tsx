@@ -34,12 +34,17 @@ export function StudentBanner({ alunoId }: StudentBannerProps) {
     useEffect(() => {
         async function fetchActiveCycle() {
             try {
-                // 1. Get student level_id directly
+                // 1. Get student status and level_id directly
                 const { data: aluno } = await supabase
                     .from('alunos')
-                    .select('nivel_atual_id')
+                    .select('status, nivel_atual_id')
                     .eq('id', alunoId)
                     .maybeSingle()
+
+                if (!aluno || aluno.status !== 'ativo') {
+                    setLoading(false)
+                    return
+                }
 
                 if (!aluno?.nivel_atual_id) return
 

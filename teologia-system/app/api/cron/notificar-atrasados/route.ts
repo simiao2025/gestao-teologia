@@ -73,6 +73,7 @@ export async function GET(request: Request) {
                 .from('alunos')
                 .select('id')
                 .eq('nivel_id', disc.nivel_id)
+                .eq('status', 'ativo')
 
             const idsAlunosNivel = alunosNoNivel?.map(a => a.id) || []
             if (idsAlunosNivel.length === 0) continue

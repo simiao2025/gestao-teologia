@@ -35,7 +35,7 @@ export const alunoEditSchema = z.object({
   email: z.string().email('Email inválido'),
   telefone: z.string().min(10, 'Telefone inválido'),
   endereco: z.string().min(5, 'Endereço inválido'),
-  status: z.enum(['ativo', 'trancado', 'concluído']),
+  status: z.enum(['ativo', 'trancado', 'desistente', 'concluído']),
   subnucleo_id: z.string().uuid('Subnúcleo inválido')
 })
 

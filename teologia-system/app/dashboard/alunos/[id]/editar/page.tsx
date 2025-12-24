@@ -60,6 +60,7 @@ export default function EditarAlunoPage({ params }: { params: { id: string } }) 
         cidade: '',
         uf: '',
         cep: '',
+        status: '',
         usuario_id: '' // ID da tabela usuarios
     })
 
@@ -100,6 +101,7 @@ export default function EditarAlunoPage({ params }: { params: { id: string } }) 
                     cidade,
                     estado,
                     cep,
+                    status,
                     usuario_id:id, 
                     usuarios:id (
                         nome,
@@ -143,6 +145,7 @@ export default function EditarAlunoPage({ params }: { params: { id: string } }) 
                 cidade: aluno.cidade || '',
                 uf: aluno.estado || '',
                 cep: aluno.cep || '',
+                status: aluno.status || '',
                 usuario_id: aluno.id // Assuming ID matches
             })
 
@@ -198,7 +201,8 @@ export default function EditarAlunoPage({ params }: { params: { id: string } }) 
                     instituicao_teologia: formData.ja_estudou_teologia ? formData.instituicao_teologia : null,
                     cidade: formData.cidade,
                     estado: formData.uf,
-                    cep: formData.cep
+                    cep: formData.cep,
+                    status: formData.status
                 })
                 .eq('id', params.id)
 
@@ -303,6 +307,19 @@ export default function EditarAlunoPage({ params }: { params: { id: string } }) 
                                             value={formData.rg}
                                             onChange={e => setFormData({ ...formData, rg: e.target.value })}
                                         />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Status do Aluno</label>
+                                        <select
+                                            value={formData.status}
+                                            onChange={e => setFormData({ ...formData, status: e.target.value })}
+                                            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                                        >
+                                            <option value="ativo">Ativo</option>
+                                            <option value="trancado">Trancado</option>
+                                            <option value="desistente">Desistente</option>
+                                            <option value="concluído">Concluído</option>
+                                        </select>
                                     </div>
                                 </div>
 

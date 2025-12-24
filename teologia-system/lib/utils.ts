@@ -42,6 +42,7 @@ export function getStatusColor(status: string): string {
     // Status de alunos
     'ativo': 'bg-green-100 text-green-800',
     'trancado': 'bg-red-100 text-red-800',
+    'desistente': 'bg-gray-100 text-gray-800',
     'concluído': 'bg-blue-100 text-blue-800',
 
     // Status acadêmico
@@ -69,6 +70,7 @@ export function getStatusLabel(status: string): string {
     // Status de alunos
     'ativo': 'Ativo',
     'trancado': 'Trancado',
+    'desistente': 'Desistente',
     'concluído': 'Concluído',
 
     // Status acadêmico

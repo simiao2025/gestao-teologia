@@ -32,7 +32,7 @@ interface AlunoWithDetails {
   cpf: string
   data_nascimento: string
   endereco: string
-  status: 'ativo' | 'trancado' | 'concluído'
+  status: 'ativo' | 'trancado' | 'desistente' | 'concluído'
   subnucleo_id: string
   subnucleo_nome?: string
   nivel_atual?: string
@@ -296,6 +296,21 @@ export default function AlunosPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
+                <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span className="text-gray-600 font-bold">D</span>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Desistentes</p>
+                  <p className="text-2xl font-bold">
+                    {alunos.filter(a => a.status === 'desistente').length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
                 <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-blue-600 font-bold">C</span>
                 </div>
@@ -342,6 +357,7 @@ export default function AlunosPage() {
                   <option value="">Todos os status</option>
                   <option value="ativo">Ativo</option>
                   <option value="trancado">Trancado</option>
+                  <option value="desistente">Desistente</option>
                   <option value="concluído">Concluído</option>
                 </select>
               </div>
