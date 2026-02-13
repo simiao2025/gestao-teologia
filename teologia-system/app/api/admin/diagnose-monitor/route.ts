@@ -80,8 +80,8 @@ export async function GET(request: Request) {
                 matriculas_cursando: matriculas?.filter(m => m.status === 'cursando').length || 0,
                 alunos: alunosSubnucleo?.map(a => ({
                     id: a.id,
-                    nome: a.usuario?.nome,
-                    email: a.usuario?.email,
+                    nome: (a.usuario as any)?.nome,
+                    email: (a.usuario as any)?.email,
                     cpf: a.cpf,
                     tem_matricula: matriculas?.some(m => m.aluno_id === a.id),
                     status_matricula: matriculas?.find(m => m.aluno_id === a.id)?.status
