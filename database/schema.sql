@@ -203,6 +203,7 @@ BEGIN
     INSERT INTO alunos (id, cpf, data_nascimento, endereco, subnucleo_id)
     VALUES (usuario_id, p_cpf, p_data_nascimento, p_endereco, p_subnucleo_id);
     
+    -- Apenas retornar o ID (o magic link será enviado pelo frontend)
     RETURN usuario_id;
 END;
 $$ LANGUAGE plpgsql;
